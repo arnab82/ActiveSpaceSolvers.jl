@@ -1008,5 +1008,6 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         end
         ### END S2-adapted block SVD ###
     end
+    display(schmidt_basis)
     return schmidt_basis
 end
