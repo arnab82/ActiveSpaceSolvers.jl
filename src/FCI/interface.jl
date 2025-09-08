@@ -979,12 +979,14 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         # Project block_matrix to S2 eigenbasis
         # block_matrix_S2basis = S2_eigvecs' * block_matrix
         block_matrix_S2basis= block_matrix * S2_eigvecs
+        rows, cols = size(block_matrix_S2basis)
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-8, S2_eigvals)
-            if isempty(idxs)
+            idxs_in_block_matrix = filter(i -> i <= rows, idxs)
+            if isempty(idxs_in_block_matrix)
                 continue
             end
-            block_fvec = block_matrix_S2basis[idxs, :] # Rows correspond to S2 eigenfunctions
+            block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
 
             # SVD for each S2 block
             @printf("   S² block %f\n", S2)
