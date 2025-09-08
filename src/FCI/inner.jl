@@ -1183,7 +1183,7 @@ function build_S2_matrix(P::FCIAnsatz)
     ket_b = DeterminantString(P.no, P.nb)
     bra_a = DeterminantString(P.no, P.na)
     bra_b = DeterminantString(P.no, P.nb)
-    println("norbs1",P.no,"  na",P.na,"  nb",P.nb," dim",P.dim)
+    println("norbs1:",P.no,"  na",P.na,"  nb",P.nb," dim",P.dim)
 
     #   lookup the ket space
     ket_a_lookup = fill_ca_lookup(ket_a)
