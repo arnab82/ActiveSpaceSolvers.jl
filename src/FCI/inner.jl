@@ -1,4 +1,4 @@
-using LinearAlgebra 
+using LinearAlgebra
 using Printf
 using Profile
 using LinearMaps
@@ -14,10 +14,10 @@ function compute_spin_diag_terms_full!(H, P::FCIAnsatz, Hmat)
     #={{{=#
 
     print(" Compute same spin terms.\n")
-    size(Hmat,1) == P.dim || throw(DimensionMismatch())
+    size(Hmat, 1) == P.dim || throw(DimensionMismatch())
 
-    Hdiag_a = FCI.precompute_spin_diag_terms(H,P,P.na)
-    Hdiag_b = FCI.precompute_spin_diag_terms(H,P,P.nb)
+    Hdiag_a = FCI.precompute_spin_diag_terms(H, P, P.na)
+    Hdiag_b = FCI.precompute_spin_diag_terms(H, P, P.nb)
     Hmat .+= kron(Matrix(1.0I, P.dimb, P.dimb), Hdiag_a)
     Hmat .+= kron(Hdiag_b, Matrix(1.0I, P.dima, P.dima))
 
@@ -32,24 +32,24 @@ end
 function compute_fock_diagonal(P::FCIAnsatz, orb_energies::Vector, e_mf::Real)
     ket_a = DeterminantString(P.no, P.na)
     ket_b = DeterminantString(P.no, P.nb)
-    
-    meanfield_e = e_mf 
-    meanfield_e -=sum(orb_energies[ket_a.config])
-    meanfield_e -=sum(orb_energies[ket_b.config])
+
+    meanfield_e = e_mf
+    meanfield_e -= sum(orb_energies[ket_a.config])
+    meanfield_e -= sum(orb_energies[ket_b.config])
 
     fdiag = zeros(ket_a.max, ket_b.max)
-    
-    reset!(ket_a) 
-    reset!(ket_b) 
+
+    reset!(ket_a)
+    reset!(ket_b)
     for Ib in 1:ket_b.max
         eb = sum(orb_energies[ket_b.config]) + meanfield_e
         for Ia in 1:ket_a.max
-            fdiag[Ia,Ib] = eb + sum(orb_energies[ket_a.config]) 
+            fdiag[Ia, Ib] = eb + sum(orb_energies[ket_a.config])
             incr!(ket_a)
         end
         incr!(ket_b)
     end
-    fdiag = reshape(fdiag,ket_a.max*ket_b.max)
+    fdiag = reshape(fdiag, ket_a.max * ket_b.max)
     #display(fdiag)
     return fdiag
 end
@@ -62,7 +62,7 @@ function compute_ab_terms_full!(H, P::FCIAnsatz, Hmat)
     #={{{=#
 
     print(" Compute opposite spin terms.\n")
-    @assert(size(Hmat,1) == P.dim)
+    @assert(size(Hmat, 1) == P.dim)
 
     #v = transpose(vin)
 
@@ -82,7 +82,7 @@ function compute_ab_terms_full!(H, P::FCIAnsatz, Hmat)
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             #  <pq|rs> p'q'sr  --> (pr|qs) (a,b)
             for r in 1:ket_a.no
@@ -94,7 +94,7 @@ function compute_ab_terms_full!(H, P::FCIAnsatz, Hmat)
 
                     Lb = 1
                     sign_b = 1
-                    L = 1 
+                    L = 1
                     for s in 1:ket_b.no
                         for q in 1:ket_b.no
                             sign_b, Lb = ket_b_lookup[Kb][q+(s-1)*ket_b.no]
@@ -103,9 +103,9 @@ function compute_ab_terms_full!(H, P::FCIAnsatz, Hmat)
                                 continue
                             end
 
-                            L = La + (Lb-1) * bra_a.max
+                            L = La + (Lb - 1) * bra_a.max
 
-                            Hmat[K,L] += H.h2[p,r,q,s] * sign_a * sign_b
+                            Hmat[K, L] += H.h2[p, r, q, s] * sign_a * sign_b
 
                         end
                     end
@@ -116,7 +116,7 @@ function compute_ab_terms_full!(H, P::FCIAnsatz, Hmat)
         end
         incr!(ket_b)
     end
-    return  
+    return
 end
 #=}}}=#
 
@@ -151,13 +151,13 @@ function compute_ab_terms_full(H, P::FCIAnsatz; T::Type=Float64)
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             #  <pq|rs> p'q'sr  --> (pr|qs) (a,b)
             for r in 1:ket_a.no
                 for p in 1:ket_a.no
                     #sign_a, La = ket_a_lookup[Ka][p+(r-1)*ket_a.no]
-                    La = ket_a_lookup2[p,r,Ka]
+                    La = ket_a_lookup2[p, r, Ka]
                     if La == 0
                         continue
                     end
@@ -166,10 +166,10 @@ function compute_ab_terms_full(H, P::FCIAnsatz; T::Type=Float64)
 
                     Lb = 1
                     sign_b = 1
-                    L = 1 
+                    L = 1
                     for s in 1:ket_b.no
                         for q in 1:ket_b.no
-                            Lb = ket_b_lookup2[q,s,Kb]
+                            Lb = ket_b_lookup2[q, s, Kb]
                             if Lb == 0
                                 continue
                             end
@@ -181,9 +181,9 @@ function compute_ab_terms_full(H, P::FCIAnsatz; T::Type=Float64)
                                 continue
                             end
 
-                            L = La + (Lb-1) * a_max
+                            L = La + (Lb - 1) * a_max
 
-                            Hmat[K,L] += H.h2[p,r,q,s] * sign_a * sign_b
+                            Hmat[K, L] += H.h2[p, r, q, s] * sign_a * sign_b
                             continue
                         end
                     end
@@ -195,7 +195,7 @@ function compute_ab_terms_full(H, P::FCIAnsatz; T::Type=Float64)
         incr!(ket_b)
     end
     #sig = transpose(sig)
-    return Hmat 
+    return Hmat
 end
 #=}}}=#
 
@@ -203,18 +203,18 @@ end
 
 
 # Helper functions for Olsen's agorithm
-function _gather!(FJb::Vector{T}, occ::Vector{Int}, vir::Vector{Int}, vkl::Array{T,2}, Ib::Int,ket_b_lookup) where {T}
-#={{{=#
+function _gather!(FJb::Vector{T}, occ::Vector{Int}, vir::Vector{Int}, vkl::Array{T,2}, Ib::Int, ket_b_lookup) where {T}
+    #={{{=#
     i::Int = 1
     j::Int = 1
     Jb::Int = 1
     sgn::T = 1.0
-    @inbounds @simd for j in occ 
+    @inbounds @simd for j in occ
         for i in vir
-            Jb = ket_b_lookup[i,j,Ib]
+            Jb = ket_b_lookup[i, j, Ib]
             sgn = sign(Jb)
             Jb = abs(Jb)
-            FJb[Jb] = FJb[Jb] + vkl[j,i]*sgn
+            FJb[Jb] = FJb[Jb] + vkl[j, i] * sgn
         end
     end
 end
@@ -228,12 +228,12 @@ function _mult!(Ckl::Array{T,3}, FJb::Array{T,1}, VI::Array{T,2}) where {T}
     ket_max = size(FJb)[1]
     tmp = 0.0
     for si in 1:n_roots
-        @views V = VI[:,si]
+        @views V = VI[:, si]
         for Jb in 1:ket_max
             tmp = FJb[Jb]
             if abs(tmp) > 1e-14
                 @inbounds @simd for I in 1:nI
-                    VI[I,si] += tmp*Ckl[I,Jb,si]
+                    VI[I, si] += tmp * Ckl[I, Jb, si]
                 end
                 #@views LinearAlgebra.axpy!(tmp, Ckl[:,Jb,si], VI[:,si])
                 #@inbounds VI[:,si] .+= tmp .* Ckl[:,Jb,si]
@@ -249,14 +249,14 @@ function _scatter!(sig::Array{T,3}, VI::Array{T,2}, L::Vector{Int}, R::Vector{In
     n_roots = size(sig)[3]
     @inbounds @simd for si in 1:n_roots
         for Li in 1:length(L)
-            sig[R[Li],Ib,si] += VI[Li,si] 
+            sig[R[Li], Ib, si] += VI[Li, si]
             #@inbounds sig[R[Li],Ib,si] += VI[Li,si] 
         end
     end
 end
 #=}}}=#
 
-function _getCkl!(Ckl::Array{T,3}, v,L::Vector{Int}) where {T}
+function _getCkl!(Ckl::Array{T,3}, v, L::Vector{Int}) where {T}
     #={{{=#
     nI = length(L)
     n_roots = size(v)[3]
@@ -264,7 +264,7 @@ function _getCkl!(Ckl::Array{T,3}, v,L::Vector{Int}) where {T}
     @inbounds @simd for si in 1:n_roots
         for Jb in 1:ket_max
             for Li in 1:nI
-                Ckl[Li,Jb,si] = v[abs(L[Li]), Jb, si] * sign(L[Li])
+                Ckl[Li, Jb, si] = v[abs(L[Li]), Jb, si] * sign(L[Li])
             end
         end
     end
@@ -275,14 +275,14 @@ end
     compute_ab_terms2(v, H, P::FCIAnsatz, 
                           ket_a_lookup, ket_b_lookup)
 """
-function compute_ab_terms2(v, H, P::FCIAnsatz, 
-                          ket_a_lookup, ket_b_lookup)
+function compute_ab_terms2(v, H, P::FCIAnsatz,
+    ket_a_lookup, ket_b_lookup)
     #={{{=#
 
     T = eltype(v[1])
 
     #print(" Compute opposite spin terms. Shape of v: ", size(v), "\n")
-    @assert(size(v,1)*size(v,2) == P.dim)
+    @assert(size(v, 1) * size(v, 2) == P.dim)
 
     #   Create local references to ci_strings
     ket_a = DeterminantString(P.no, P.na)
@@ -295,20 +295,20 @@ function compute_ab_terms2(v, H, P::FCIAnsatz,
 
     a_max::Int = bra_a.max
     reset!(ket_b)
-    
+
     #
     #   sig3(Ia,Ib,s) = <Ia|k'l|Ja> <Ib|i'j|Jb> V(ij,kl) C(Ja,Jb,s)
-    n_roots::Int = size(v,3)
+    n_roots::Int = size(v, 3)
     #v = reshape(v,ket_a.max, ket_b.max, n_roots) 
-    sig = zeros(T, ket_a.max, ket_b.max, n_roots) 
-    FJb_scr1 = zeros(T, ket_b.max) 
-    Ckl_scr1 = zeros(T, binomial(ket_a.no-1,ket_a.ne-1), size(v)[2], size(v)[3])
-    Ckl_scr2 = zeros(T, binomial(ket_a.no-2,ket_a.ne-1), size(v)[2], size(v)[3])
+    sig = zeros(T, ket_a.max, ket_b.max, n_roots)
+    FJb_scr1 = zeros(T, ket_b.max)
+    Ckl_scr1 = zeros(T, binomial(ket_a.no - 1, ket_a.ne - 1), size(v)[2], size(v)[3])
+    Ckl_scr2 = zeros(T, binomial(ket_a.no - 2, ket_a.ne - 1), size(v)[2], size(v)[3])
     Ckl = Array{T,3}
-    virt = zeros(Int,ket_b.no-ket_b.ne)
+    virt = zeros(Int, ket_b.no - ket_b.ne)
     diff_ref = Set(collect(1:ket_b.no))
     FJb = copy(FJb_scr1)
-    for k in 1:ket_a.no,  l in 1:ket_a.no
+    for k in 1:ket_a.no, l in 1:ket_a.no
         #@printf(" %4i, %4i\n",k,l)
         L = Vector{Int}()
         R = Vector{Int}()
@@ -320,15 +320,15 @@ function compute_ab_terms2(v, H, P::FCIAnsatz,
         #        push!(L,I[2])
         #    end
         #end
-        for (Iidx,I) in enumerate(ket_a_lookup[k,l,:])
+        for (Iidx, I) in enumerate(ket_a_lookup[k, l, :])
             if I != 0
-                push!(R,Iidx)
-                push!(L,I)
+                push!(R, Iidx)
+                push!(L, I)
             end
         end
-        VI = zeros(T, length(L),n_roots)
+        VI = zeros(T, length(L), n_roots)
         #Ckl = zeros(T, size(v)[2], length(L), size(v)[3])
-        if k==l
+        if k == l
             Ckl = deepcopy(Ckl_scr1)
         else
             Ckl = deepcopy(Ckl_scr2)
@@ -342,18 +342,18 @@ function compute_ab_terms2(v, H, P::FCIAnsatz,
         #    end
         #end
         _getCkl!(Ckl, v, L)
-        
-        vkl = H.h2[:,:,l,k]
+
+        vkl = H.h2[:, :, l, k]
         reset!(ket_b)
         for Ib in 1:ket_b.max
-            fill!(FJb,T(0.0))
+            fill!(FJb, T(0.0))
             Jb = 1
             sgn = 1
             zero_num = 0
-        
+
             no = ket_b.no
             ne = ket_b.ne
-            nv = no-ne
+            nv = no - ne
             scr1 = 0.0
             get_unoccupied!(virt, ket_b)
             #virt = setdiff(diff_ref, ket_b.config)
@@ -362,22 +362,22 @@ function compute_ab_terms2(v, H, P::FCIAnsatz,
             #
             # diagonal part
             for j in ket_b.config
-                FJb[Ib] += H.h2[j,j,l,k]
+                FJb[Ib] += H.h2[j, j, l, k]
             end
-          
-            if 1==0
+
+            if 1 == 0
                 _mult_old!(Ckl, FJb, VI)
             end
-            if 1==0
+            if 1 == 0
                 @tensor begin
-                    VI[I,s] = FJb[J] * Ckl[J,I,s]
+                    VI[I, s] = FJb[J] * Ckl[J, I, s]
                 end
             end
-            if 1==1
+            if 1 == 1
                 _mult!(Ckl, FJb, VI)
             end
-           
-            _scatter!(sig,VI,L,R,Ib)
+
+            _scatter!(sig, VI, L, R, Ib)
             #@btime $_scatter!($sig,$VI,$L,$R,$Ib)
 
             incr!(ket_b)
@@ -386,7 +386,7 @@ function compute_ab_terms2(v, H, P::FCIAnsatz,
 
 
     return sig
-    
+
 
 end
 #=}}}=#
@@ -394,31 +394,31 @@ end
 
 
 
-function _ss_sum!(sig::Array{T,3}, v::Array{T,3}, F::Vector{T},Ia::Int) where {T}
-    nKb     = size(v)[1]
+function _ss_sum!(sig::Array{T,3}, v::Array{T,3}, F::Vector{T}, Ia::Int) where {T}
+    nKb = size(v)[1]
     n_roots = size(v)[2]
-    nJa     = size(v)[3]
+    nJa = size(v)[3]
     for Ja in 1:nJa
-        if abs(F[Ja]) > 1e-14 
+        if abs(F[Ja]) > 1e-14
             @inbounds @simd for si in 1:n_roots
                 for Kb in 1:nKb
-                    sig[Kb,si,Ia] += F[Ja]*v[Kb,si,Ja]
+                    sig[Kb, si, Ia] += F[Ja] * v[Kb, si, Ja]
                 end
             end
         end
     end
 end
 
-function _ss_sum_Ia!(sig::Array{T,3}, v::Array{T,3}, F::Vector{T},Ia::Int) where {T}
+function _ss_sum_Ia!(sig::Array{T,3}, v::Array{T,3}, F::Vector{T}, Ia::Int) where {T}
     nJa = size(v)[3]
     nKb = size(v)[1]
     n_roots = size(v)[2]
 
     for Ja in 1:nJa
-        if abs(F[Ja]) > 1e-14 
+        if abs(F[Ja]) > 1e-14
             @inbounds @simd for si in 1:n_roots
                 for Kb in 1:nKb
-                    sig[Kb,si,Ia] += F[Ja]*v[Kb,si,Ja]
+                    sig[Kb, si, Ia] += F[Ja] * v[Kb, si, Ja]
                 end
             end
         end
@@ -434,7 +434,7 @@ function compute_ss_terms2(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
     #={{{=#
 
     #print(" Compute opposite spin terms. Shape of v: ", size(v), "\n")
-    @assert(size(v,1)*size(v,2) == P.dim)
+    @assert(size(v, 1) * size(v, 2) == P.dim)
 
     T = eltype(v[1])
     #v = transpose(vin)
@@ -453,49 +453,49 @@ function compute_ss_terms2(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
 
     #
     #   sig1(Ia,Ib,s) = <Ib|i'j|Jb> V(ij,kl) C(Ja,Jb,s)
-    n_roots::Int = size(v,3)
+    n_roots::Int = size(v, 3)
     #v = reshape(v,ket_a.max, ket_b.max, n_roots) 
-    sig = zeros(T, ket_a.max, ket_b.max, n_roots) 
+    sig = zeros(T, ket_a.max, ket_b.max, n_roots)
     size(sig) == size(v) || throw(DimensionError())
 
     h1eff = deepcopy(H.h1)
     @tensor begin
-        h1eff[p,q] -= .5 * H.h2[p,j,j,q]  
+        h1eff[p, q] -= 0.5 * H.h2[p, j, j, q]
     end
 
     #bb
-    sig = permutedims(sig,[1,3,2])
-    v = permutedims(v,[1,3,2])
-    
+    sig = permutedims(sig, [1, 3, 2])
+    v = permutedims(v, [1, 3, 2])
+
     ket = ket_b
-    reset!(ket) 
+    reset!(ket)
     F = zeros(T, ket_b.max)
     for I in 1:ket.max
         F .= 0
         for k in 1:ket.no, l in 1:ket.no
-            K = ket_b_lookup[k,l,I]
+            K = ket_b_lookup[k, l, I]
             if K == 0
                 continue
             end
             sign_kl = sign(K)
             K = abs(K)
 
-            @inbounds F[K] += sign_kl * h1eff[k,l]
+            @inbounds F[K] += sign_kl * h1eff[k, l]
             for i in 1:ket.no, j in 1:ket.no
-                J = ket_b_lookup[i,j,K]
+                J = ket_b_lookup[i, j, K]
                 if J == 0
                     continue
                 end
                 sign_ij = sign(J)
                 J = abs(J)
                 if sign_kl == sign_ij
-                    @inbounds F[J] += .5 * H.h2[i,j,k,l]
+                    @inbounds F[J] += 0.5 * H.h2[i, j, k, l]
                 else
-                    @inbounds F[J] -= .5 * H.h2[i,j,k,l]
+                    @inbounds F[J] -= 0.5 * H.h2[i, j, k, l]
                 end
             end
         end
-        _ss_sum!(sig,v,F,I)
+        _ss_sum!(sig, v, F, I)
     end
     #sig = permutedims(sig,[1,3,2])
     #v = permutedims(v,[1,3,2])
@@ -503,47 +503,47 @@ function compute_ss_terms2(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
 
 
     #aa
-    sig = permutedims(sig,[3,2,1])
-    v = permutedims(v,[3,2,1])
+    sig = permutedims(sig, [3, 2, 1])
+    v = permutedims(v, [3, 2, 1])
 
     ket = ket_a
-    reset!(ket) 
+    reset!(ket)
     F = zeros(T, ket_a.max)
     bra = deepcopy(ket)
     for I in 1:ket.max
         F .= 0
         for k in 1:ket.no, l in 1:ket.no
-            K = ket_a_lookup[k,l,I]
+            K = ket_a_lookup[k, l, I]
             if K == 0
                 continue
             end
             sign_kl = sign(K)
             K = abs(K)
 
-            @inbounds F[K] += sign_kl * h1eff[k,l]
+            @inbounds F[K] += sign_kl * h1eff[k, l]
             for i in 1:ket.no, j in 1:ket.no
-                J = ket_a_lookup[i,j,K]
+                J = ket_a_lookup[i, j, K]
                 if J == 0
                     continue
                 end
                 sign_ij = sign(J)
                 J = abs(J)
                 if sign_kl == sign_ij
-                    @inbounds F[J] += .5 * H.h2[i,j,k,l]
+                    @inbounds F[J] += 0.5 * H.h2[i, j, k, l]
                 else
-                    @inbounds F[J] -= .5 * H.h2[i,j,k,l]
+                    @inbounds F[J] -= 0.5 * H.h2[i, j, k, l]
                 end
 
             end
         end
 
-        _ss_sum_Ia!(sig,v,F,I)
+        _ss_sum_Ia!(sig, v, F, I)
 
     end
-    
-    sig = permutedims(sig,[3,1,2])
-    v = permutedims(v,[3,1,2])
-    
+
+    sig = permutedims(sig, [3, 1, 2])
+    v = permutedims(v, [3, 1, 2])
+
     return sig
 
 end
@@ -557,7 +557,7 @@ function compute_ab_terms(v, H, P::FCIAnsatz)
     #={{{=#
 
     #print(" Compute opposite spin terms. Shape of v: ", size(v), "\n")
-    @assert(size(v,1) == P.dim)
+    @assert(size(v, 1) == P.dim)
 
     #v = transpose(vin)
 
@@ -577,19 +577,19 @@ function compute_ab_terms(v, H, P::FCIAnsatz)
     a_max = bra_a.max
     reset!(ket_b)
 
-    n_roots = size(sig,2)
-    scr = zeros(1,ket_a.max*ket_b.max)
+    n_roots = size(sig, 2)
+    scr = zeros(1, ket_a.max * ket_b.max)
     for Kb in 1:ket_b.max
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             #  <pq|rs> p'q'sr  --> (pr|qs) (a,b)
             for r in 1:ket_a.no
                 for p in 1:ket_a.no
                     #sign_a, La = ket_a_lookup[Ka][p+(r-1)*ket_a.no]
-                    La = ket_a_lookup[p,r,Ka]
+                    La = ket_a_lookup[p, r, Ka]
                     sign_a = sign(La)
                     La = abs(La)
                     if La == 0
@@ -598,10 +598,10 @@ function compute_ab_terms(v, H, P::FCIAnsatz)
 
                     Lb = 1
                     sign_b = 1
-                    L = 1 
+                    L = 1
                     for s in 1:ket_b.no
                         for q in 1:ket_b.no
-                            Lb = ket_b_lookup[q,s,Kb]
+                            Lb = ket_b_lookup[q, s, Kb]
                             sign_b = sign(Lb)
                             Lb = abs(Lb)
 
@@ -609,12 +609,12 @@ function compute_ab_terms(v, H, P::FCIAnsatz)
                                 continue
                             end
 
-                            L = La + (Lb-1) * a_max
+                            L = La + (Lb - 1) * a_max
 
                             #sig[K,:] += H.h2[p,r,q,s] * v[L,:]
                             #sig[K,:] .+= H.h2[p,r,q,s] * sign_a * sign_b * v[L,:]
                             for si in 1:n_roots
-                                sig[K,si] += H.h2[p,r,q,s] * sign_a * sign_b * v[L,si]
+                                sig[K, si] += H.h2[p, r, q, s] * sign_a * sign_b * v[L, si]
                                 #@views sig[K,si] .+= H.h2[p,r,q,s] * sign_a * sign_b * v[L,si]
                             end
                             continue
@@ -628,7 +628,7 @@ function compute_ab_terms(v, H, P::FCIAnsatz)
         incr!(ket_b)
     end
     #sig = transpose(sig)
-    return sig 
+    return sig
 end
 #=}}}=#
 
@@ -639,11 +639,11 @@ function compute_ab_terms(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
     #={{{=#
 
     #print(" Compute opposite spin terms. Shape of v: ", size(v), "\n")
-    size(v,1) == P.dim || throw(DimensionError())
+    size(v, 1) == P.dim || throw(DimensionError())
 
     #v = transpose(vin)
 
-    sig = 0*v
+    sig = 0 * v
 
 
     #   Create local references to ci_strings
@@ -655,13 +655,13 @@ function compute_ab_terms(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
     a_max = bra_a.max
     reset!(ket_b)
 
-    n_roots = size(sig,2)
-    scr = zeros(1,ket_a.max*ket_b.max)
+    n_roots = size(sig, 2)
+    scr = zeros(1, ket_a.max * ket_b.max)
     for Kb in 1:ket_b.max
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             #  <pq|rs> p'q'sr  --> (pr|qs) (a,b)
             for r in 1:ket_a.no
@@ -673,7 +673,7 @@ function compute_ab_terms(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
 
                     Lb = 1
                     sign_b = 1
-                    L = 1 
+                    L = 1
                     for s in 1:ket_b.no
                         for q in 1:ket_b.no
                             sign_b, Lb = ket_b_lookup[Kb][q+(s-1)*ket_b.no]
@@ -682,12 +682,12 @@ function compute_ab_terms(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
                                 continue
                             end
 
-                            L = La + (Lb-1) * a_max
+                            L = La + (Lb - 1) * a_max
 
                             #sig[K,:] += H.h2[p,r,q,s] * v[L,:]
                             #sig[K,:] += H.h2[p,r,q,s] * sign_a * sign_b * v[L,:]
                             for si in 1:n_roots
-                                sig[K,si] += H.h2[p,r,q,s] * sign_a * sign_b * v[L,si]
+                                sig[K, si] += H.h2[p, r, q, s] * sign_a * sign_b * v[L, si]
                                 #@views sig[K,si] .+= H.h2[p,r,q,s] * sign_a * sign_b * v[L,si]
                             end
                             continue
@@ -701,7 +701,7 @@ function compute_ab_terms(v, H, P::FCIAnsatz, ket_a_lookup, ket_b_lookup)
         incr!(ket_b)
     end
     #sig = transpose(sig)
-    return sig 
+    return sig
 end
 #=}}}=#
 
@@ -717,7 +717,7 @@ function precompute_spin_diag_terms(H, P::FCIAnsatz, e)
 
     ket_ca_lookup = fill_ca_lookup(ket)
 
-    Hout = zeros(ket.max,ket.max)
+    Hout = zeros(ket.max, ket.max)
 
     reset!(ket)
 
@@ -727,19 +727,19 @@ function precompute_spin_diag_terms(H, P::FCIAnsatz, e)
         for p in 1:ket.no
             for q in 1:ket.no
                 bra = deepcopy(ket)
-                apply_annihilation!(bra,q)
+                apply_annihilation!(bra, q)
                 if bra.sign == 0
                     continue
                 end
-                apply_creation!(bra,p)
+                apply_creation!(bra, p)
                 if bra.sign == 0
                     continue
                 end
 
                 L = calc_linear_index(bra)
 
-                term = H.h1[q,p]
-                Hout[K,L] += term * bra.sign
+                term = H.h1[q, p]
+                Hout[K, L] += term * bra.sign
             end
         end
 
@@ -752,32 +752,32 @@ function precompute_spin_diag_terms(H, P::FCIAnsatz, e)
 
                         bra = deepcopy(ket)
 
-                        apply_annihilation!(bra,r) 
+                        apply_annihilation!(bra, r)
                         if bra.sign == 0
                             continue
                         end
-                        apply_annihilation!(bra,s) 
+                        apply_annihilation!(bra, s)
                         if bra.sign == 0
                             continue
                         end
-                        apply_creation!(bra,q) 
+                        apply_creation!(bra, q)
                         if bra.sign == 0
                             continue
                         end
-                        apply_creation!(bra,p) 
+                        apply_creation!(bra, p)
                         if bra.sign == 0
                             continue
                         end
                         L = calc_linear_index(bra)
-                        Ipqrs = H.h2[p,r,q,s]-H.h2[p,s,q,r]
-                        Hout[K,L] += bra.sign*Ipqrs
-#                        if bra.sign == -1
-#                            Hout[K,L] -= Ipqrs
-#                        elseif bra.sign == +1
-#                            Hout[K,L] += Ipqrs
-#                        else
-#                            throw(Exception())
-#                        end
+                        Ipqrs = H.h2[p, r, q, s] - H.h2[p, s, q, r]
+                        Hout[K, L] += bra.sign * Ipqrs
+                        #                        if bra.sign == -1
+                        #                            Hout[K,L] -= Ipqrs
+                        #                        elseif bra.sign == +1
+                        #                            Hout[K,L] += Ipqrs
+                        #                        else
+                        #                            throw(Exception())
+                        #                        end
                     end
                 end
             end
@@ -811,20 +811,20 @@ function get_map(ham, prb::FCIAnsatz, HdiagA, HdiagB)
         nr = 0
         if length(size(v)) == 1
             nr = 1
-            v = reshape(v,ket_a.max*ket_b.max, nr)
-        else 
+            v = reshape(v, ket_a.max * ket_b.max, nr)
+        else
             nr = size(v)[2]
         end
         v = reshape(v, ket_a.max, ket_b.max, nr)
         sig = compute_ab_terms2(v, ham, prb, lookup_a, lookup_b)
         @tensor begin
-            sig[I,J,s] += HdiagA[I,K] * v[K,J,s]
-            sig[I,J,s] += HdiagB[J,K] * v[I,K,s]
+            sig[I, J, s] += HdiagA[I, K] * v[K, J, s]
+            sig[I, J, s] += HdiagB[J, K] * v[I, K, s]
         end
 
-        v = reshape(v, ket_a.max*ket_b.max, nr)
-        sig = reshape(sig, ket_a.max*ket_b.max, nr)
-        return sig 
+        v = reshape(v, ket_a.max * ket_b.max, nr)
+        sig = reshape(sig, ket_a.max * ket_b.max, nr)
+        return sig
     end
     return LinearMap(mymatvec, prb.dim, prb.dim; issymmetric=true, ismutating=false, ishermitian=true)
 end
@@ -851,17 +851,17 @@ function get_map(ham, prb::FCIAnsatz)
         nr = 0
         if length(size(v)) == 1
             nr = 1
-            v = reshape(v,ket_a.max*ket_b.max, nr)
-        else 
+            v = reshape(v, ket_a.max * ket_b.max, nr)
+        else
             nr = size(v)[2]
         end
         v = reshape(v, ket_a.max, ket_b.max, nr)
         sig = compute_ab_terms2(v, ham, prb, lookup_a, lookup_b)
         sig += compute_ss_terms2(v, ham, prb, lookup_a, lookup_b)
 
-        v = reshape(v, ket_a.max*ket_b.max, nr)
-        sig = reshape(sig, ket_a.max*ket_b.max, nr)
-        return sig 
+        v = reshape(v, ket_a.max * ket_b.max, nr)
+        sig = reshape(sig, ket_a.max * ket_b.max, nr)
+        return sig
     end
     return LinearMap(mymatvec, prb.dim, prb.dim; issymmetric=true, ismutating=false, ishermitian=true)
 end
@@ -881,37 +881,37 @@ ints is simply an InCoreInts object from FermiCG
 
 """
 function run_fci(ints, ansatz::FCIAnsatz; v0=nothing, nroots=1, tol=1e-6,
-                precompute_ss = false)
+    precompute_ss=false)
 
     T = eltype(ints.h0)
 
     if precompute_ss
         print(" Compute spin_diagonal terms\n")
-        @time Hdiag_a = StringCI.precompute_spin_diag_terms(ints,ansatz,ansatz.na)
-        @time Hdiag_b = StringCI.precompute_spin_diag_terms(ints,ansatz,ansatz.nb)
+        @time Hdiag_a = StringCI.precompute_spin_diag_terms(ints, ansatz, ansatz.na)
+        @time Hdiag_b = StringCI.precompute_spin_diag_terms(ints, ansatz, ansatz.nb)
         print(" done\n")
 
         Hmap = StringCI.get_map(ints, ansatz, Hdiag_a, Hdiag_b)
     else
         Hmap = StringCI.get_map(ints, ansatz)
     end
-    
+
     e = 0
     v = Array{T,2}
     if v0 == nothing
-        @time e,v = eigs(Hmap, nev = nroots, which=:SR, tol=tol)
+        @time e, v = eigs(Hmap, nev=nroots, which=:SR, tol=tol)
         e = real(e)
         for ei in e
-            @printf(" Energy: %12.8f\n",ei+ints.h0)
+            @printf(" Energy: %12.8f\n", ei + ints.h0)
         end
     else
-        @time e,v = eigs(Hmap, v0=v0[:,1], nev = nroots, which=:SR, tol=tol)
+        @time e, v = eigs(Hmap, v0=v0[:, 1], nev=nroots, which=:SR, tol=tol)
         e = real(e)
         for ei in e
-            @printf(" Energy: %12.8f\n",ei+ints.h0)
+            @printf(" Energy: %12.8f\n", ei + ints.h0)
         end
     end
-    return e,v 
+    return e, v
 end
 
 
@@ -922,7 +922,7 @@ end
 function compute_S2_expval(v::Matrix, P::FCIAnsatz)
 
     #={{{=#
-    nr = size(v,2)
+    nr = size(v, 2)
     s2 = zeros(nr)
 
 
@@ -932,7 +932,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
     bra_a = DeterminantString(P.no, P.na)
     bra_b = DeterminantString(P.no, P.nb)
 
-    ind(Ka, Kb) = Ka + Kb * ket_a.max 
+    ind(Ka, Kb) = Ka + Kb * ket_a.max
 
     #   lookup the ket space
     ket_a_lookup = fill_ca_lookup(ket_a)
@@ -943,7 +943,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
 
             # Sz.Sz
@@ -951,7 +951,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                 for aj in ket_a.config
                     if ai != aj
                         for r in 1:nr
-                            s2[r] += .25 * v[K,r]*v[K,r] 
+                            s2[r] += 0.25 * v[K, r] * v[K, r]
                         end
                     end
                 end
@@ -961,7 +961,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                 for bj in ket_b.config
                     if bi != bj
                         for r in 1:nr
-                            s2[r] += .25 * v[K,r]*v[K,r] 
+                            s2[r] += 0.25 * v[K, r] * v[K, r]
                         end
                     end
                 end
@@ -971,7 +971,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                 for bj in ket_b.config
                     if ai != bj
                         for r in 1:nr
-                            s2[r] -= .5 * v[K,r]*v[K,r] 
+                            s2[r] -= 0.5 * v[K, r] * v[K, r]
                         end
                     end
                 end
@@ -982,7 +982,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                 if ai in ket_b.config
                 else
                     for r in 1:nr
-                        s2[r] += .75 * v[K,r]*v[K,r] 
+                        s2[r] += 0.75 * v[K, r] * v[K, r]
                     end
                 end
             end
@@ -993,7 +993,7 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                 if bi in ket_a.config
                 else
                     for r in 1:nr
-                        s2[r] += .75 * v[K,r]*v[K,r] 
+                        s2[r] += 0.75 * v[K, r] * v[K, r]
                     end
                 end
             end
@@ -1010,16 +1010,16 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                             ket_a2 = deepcopy(ket_a)
                             ket_b2 = deepcopy(ket_b)
 
-                            apply_annihilation!(ket_a2,ai)
+                            apply_annihilation!(ket_a2, ai)
                             ket_a2.sign != 0 || continue
 
-                            apply_creation!(ket_b2,ai)
+                            apply_creation!(ket_b2, ai)
                             ket_b2.sign != 0 || continue
 
-                            apply_creation!(ket_a2,bj)
+                            apply_creation!(ket_a2, bj)
                             ket_a2.sign != 0 || continue
 
-                            apply_annihilation!(ket_b2,bj)
+                            apply_annihilation!(ket_b2, bj)
                             ket_b2.sign != 0 || continue
 
                             sign_a = ket_a2.sign
@@ -1028,9 +1028,9 @@ function compute_S2_expval(v::Matrix, P::FCIAnsatz)
                             La = calc_linear_index(ket_a2)
                             Lb = calc_linear_index(ket_b2)
 
-                            L = La + (Lb-1) * ket_a.max
+                            L = La + (Lb - 1) * ket_a.max
                             for r in 1:nr
-                                s2[r] += sign_a * sign_b * v[K,r] * v[L,r]
+                                s2[r] += sign_a * sign_b * v[K, r] * v[L, r]
                             end
                         end
                     end
@@ -1054,8 +1054,8 @@ end
 """
 function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
     #={{{=#
-    
-    P.dim == size(v,1) || throw(DimensionMismatch)
+
+    P.dim == size(v, 1) || throw(DimensionMismatch)
 
     S2v = zeros(size(v)...)
 
@@ -1076,14 +1076,14 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             # Sz.Sz
 
             for ai in ket_a.config
                 for aj in ket_a.config
                     if ai != aj
-                        S2v[K,:] .+= 0.25 .* v[K,:]
+                        S2v[K, :] .+= 0.25 .* v[K, :]
                     end
                 end
             end
@@ -1091,7 +1091,7 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
             for bi in ket_b.config
                 for bj in ket_b.config
                     if bi != bj
-                        S2v[K,:] .+= 0.25 .* v[K,:]
+                        S2v[K, :] .+= 0.25 .* v[K, :]
                     end
                 end
             end
@@ -1099,7 +1099,7 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
             for ai in ket_a.config
                 for bj in ket_b.config
                     if ai != bj
-                        S2v[K,:] .-= 0.50 .* v[K,:]
+                        S2v[K, :] .-= 0.50 .* v[K, :]
                     end
                 end
             end
@@ -1108,7 +1108,7 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
             for ai in ket_a.config
                 if ai in ket_b.config
                 else
-                    S2v[K,:] .+= 0.75 .* v[K,:]
+                    S2v[K, :] .+= 0.75 .* v[K, :]
                 end
             end
 
@@ -1117,7 +1117,7 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
             for bi in ket_b.config
                 if bi in ket_a.config
                 else
-                    S2v[K,:] .+= 0.75 .* v[K,:]
+                    S2v[K, :] .+= 0.75 .* v[K, :]
                 end
             end
 
@@ -1133,16 +1133,16 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
                             ket_a2 = deepcopy(ket_a)
                             ket_b2 = deepcopy(ket_b)
 
-                            apply_annihilation!(ket_a2,ai)
+                            apply_annihilation!(ket_a2, ai)
                             ket_a2.sign != 0 || continue
 
-                            apply_creation!(ket_b2,ai)
+                            apply_creation!(ket_b2, ai)
                             ket_b2.sign != 0 || continue
 
-                            apply_creation!(ket_a2,bj)
+                            apply_creation!(ket_a2, bj)
                             ket_a2.sign != 0 || continue
 
-                            apply_annihilation!(ket_b2,bj)
+                            apply_annihilation!(ket_b2, bj)
                             ket_b2.sign != 0 || continue
 
                             sign_a = ket_a2.sign
@@ -1151,8 +1151,8 @@ function apply_S2_matrix(P::FCIAnsatz, v::AbstractArray{T}) where {T}
                             La = calc_linear_index(ket_a2)
                             Lb = calc_linear_index(ket_b2)
 
-                            L = La + (Lb-1) * ket_a.max
-                            S2v[K,:] .+= sign_a .* sign_b .* v[L,:]
+                            L = La + (Lb - 1) * ket_a.max
+                            S2v[K, :] .+= sign_a .* sign_b .* v[L, :]
                         end
                     end
                 end
@@ -1194,14 +1194,14 @@ function build_S2_matrix(P::FCIAnsatz)
 
         reset!(ket_a)
         for Ka in 1:ket_a.max
-            K = Ka + (Kb-1) * ket_a.max
+            K = Ka + (Kb - 1) * ket_a.max
 
             # Sz.Sz
 
             for ai in ket_a.config
                 for aj in ket_a.config
                     if ai != aj
-                        S2[K,K] += 0.25
+                        S2[K, K] += 0.25
                     end
                 end
             end
@@ -1209,7 +1209,7 @@ function build_S2_matrix(P::FCIAnsatz)
             for bi in ket_b.config
                 for bj in ket_b.config
                     if bi != bj
-                        S2[K,K] += 0.25
+                        S2[K, K] += 0.25
                     end
                 end
             end
@@ -1217,7 +1217,7 @@ function build_S2_matrix(P::FCIAnsatz)
             for ai in ket_a.config
                 for bj in ket_b.config
                     if ai != bj
-                        S2[K,K] -= 0.50
+                        S2[K, K] -= 0.50
                     end
                 end
             end
@@ -1227,7 +1227,7 @@ function build_S2_matrix(P::FCIAnsatz)
                 if ai in ket_b.config
                     temp = 10
                 else
-                    S2[K,K] += 0.75
+                    S2[K, K] += 0.75
                 end
             end
 
@@ -1237,7 +1237,7 @@ function build_S2_matrix(P::FCIAnsatz)
                 if bi in ket_a.config
                     temp = 10
                 else
-                    S2[K,K] += 0.75
+                    S2[K, K] += 0.75
                 end
             end
 
@@ -1253,16 +1253,16 @@ function build_S2_matrix(P::FCIAnsatz)
                             ket_a2 = deepcopy(ket_a)
                             ket_b2 = deepcopy(ket_b)
 
-                            apply_annihilation!(ket_a2,ai)
+                            apply_annihilation!(ket_a2, ai)
                             ket_a2.sign != 0 || continue
 
-                            apply_creation!(ket_b2,ai)
+                            apply_creation!(ket_b2, ai)
                             ket_b2.sign != 0 || continue
 
-                            apply_creation!(ket_a2,bj)
+                            apply_creation!(ket_a2, bj)
                             ket_a2.sign != 0 || continue
 
-                            apply_annihilation!(ket_b2,bj)
+                            apply_annihilation!(ket_b2, bj)
                             ket_b2.sign != 0 || continue
 
                             sign_a = ket_a2.sign
@@ -1271,11 +1271,11 @@ function build_S2_matrix(P::FCIAnsatz)
                             La = calc_linear_index(ket_a2)
                             Lb = calc_linear_index(ket_b2)
 
-                            L = La + (Lb-1) * ket_a.max
+                            L = La + (Lb - 1) * ket_a.max
                             #print("Init ",ket_a.config,"    ",ket_b.config,"\n")
                             #print("Final",ket_a2.config,"    ",ket_b2.config,"\n")
                             #print(K,"  ",L,"\n")
-                            S2[K,L] += 1 * sign_a * sign_b
+                            S2[K, L] += 1 * sign_a * sign_b
                         end
                     end
                 end
@@ -1295,7 +1295,7 @@ end
 """
     svd_state(prb::FCIAnsatz)
 Do an SVD of the FCI vector partitioned into clusters with (norbs1 | norbs2)
-where the orbitals are assumed to be ordered for cluster 1| cluster 2 haveing norbs1 and 
+where the orbitals are assumed to be ordered for cluster 1| cluster 2 having norbs1 and 
 norbs2, respectively.
 
 - `prb`: FCIAnsatz just defines the current CI ansatz (i.e., fock sector)
@@ -1303,10 +1303,10 @@ norbs2, respectively.
 - `norbs2`:number of orbitals in right cluster
 - `svd_thresh`: the threshold below which the states will be discarded
 """
-function svd_state(v,P::FCIAnsatz,norbs1,norbs2,svd_thresh)
+function svd_state(v, P::FCIAnsatz, norbs1, norbs2, svd_thresh)
     #={{{=#
 
-    @assert(norbs1+norbs2 ==P.no)
+    @assert(norbs1 + norbs2 == P.no)
 
     schmidt_basis = OrderedDict()
     #vector = OrderedDict{Tuple{UInt8,UInt8},Float64}()
@@ -1322,23 +1322,23 @@ function svd_state(v,P::FCIAnsatz,norbs1,norbs2,svd_thresh)
     ket_a = DeterminantString(P.no, P.na)
     ket_b = DeterminantString(P.no, P.nb)
 
-    v = reshape(v,(ket_a.max, ket_b.max))
-    @assert(size(v,1) == ket_a.max)
-    @assert(size(v,2) == ket_b.max)
+    v = reshape(v, (ket_a.max, ket_b.max))
+    @assert(size(v, 1) == ket_a.max)
+    @assert(size(v, 2) == ket_b.max)
 
-    fock_labels_a = Array{Int,1}(undef,ket_a.max)
-    fock_labels_b = Array{Int,1}(undef,ket_b.max)
+    fock_labels_a = Array{Int,1}(undef, ket_a.max)
+    fock_labels_b = Array{Int,1}(undef, ket_b.max)
 
 
     # Get the fock space using the bisect method in python
     bisect = pyimport("bisect")
     for I in 1:ket_a.max
-        fock_labels_a[I] = bisect.bisect(ket_a.config,norbs1)
+        fock_labels_a[I] = bisect.bisect(ket_a.config, norbs1)
         #print("nick: ", ket_a.config, " " , norbs1, " ", fock_labels_a[I], "\n")
         incr!(ket_a)
     end
     for I in 1:ket_b.max
-        fock_labels_b[I] = bisect.bisect(ket_b.config,norbs1)
+        fock_labels_b[I] = bisect.bisect(ket_b.config, norbs1)
         incr!(ket_b)
     end
     for J in 1:ket_b.max
@@ -1351,17 +1351,17 @@ function svd_state(v,P::FCIAnsatz,norbs1,norbs2,svd_thresh)
             #    vector[fock] = [v[I,J]]
             #end
             try
-                append!(vector[tuple(fock_labels_a[I],fock_labels_b[J])],v[I,J])
+                append!(vector[tuple(fock_labels_a[I], fock_labels_b[J])], v[I, J])
             catch
-                vector[tuple(fock_labels_a[I],fock_labels_b[J])] = [v[I,J]]
+                vector[tuple(fock_labels_a[I], fock_labels_b[J])] = [v[I, J]]
             end
         end
     end
 
-    for (fock,fvec)  in vector
+    for (fock, fvec) in vector
 
         println()
-        @printf("Prepare Fock Space:  %iα, %iβ\n",fock[1] ,fock[2] )
+        @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
 
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
@@ -1370,7 +1370,7 @@ function svd_state(v,P::FCIAnsatz,norbs1,norbs2,svd_thresh)
         ket_b2 = DeterminantString(norbs2, P.nb - fock[2])
 
 
-        temp_fvec = reshape(fvec,ket_b1.max*ket_b2.max,ket_a1.max*ket_a2.max)'
+        temp_fvec = reshape(fvec, ket_b1.max * ket_b2.max, ket_a1.max * ket_a2.max)'
         #temp_fvec = reshape(fvec,ket_b1.max*ket_b2.max,ket_a1.max*ket_a2.max)'
         #st = "temp_fvec"*string(fock)
         #npzwrite(st, temp_fvec)
@@ -1378,49 +1378,48 @@ function svd_state(v,P::FCIAnsatz,norbs1,norbs2,svd_thresh)
 
         #when swapping alpha2 and beta1 do we flip sign?
         sign = 1
-        if (P.na-fock[1])%2==1 && fock[2]%2==1
+        if (P.na - fock[1]) % 2 == 1 && fock[2] % 2 == 1
             sign = -1
         end
         #println("sign",sign)
-        @printf("   Dimensions: %5i x %-5i \n",ket_a1.max*ket_b1.max, ket_a2.max*ket_b2.max)
+        @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
 
         norm_curr = fvec' * fvec
-        @printf("   Norm: %12.8f\n",sqrt(norm_curr))
+        @printf("   Norm: %12.8f\n", sqrt(norm_curr))
         #println(size(fvec))
         #display(fvec)
 
-        fvec = sign *fvec
+        fvec = sign * fvec
 
         #opposite to python with transpose on fvec
         #fvec2 = reshape(fvec',ket_b2.max,ket_b1.max,ket_a2.max,ket_a1.max)
-        fvec2 = reshape(fvec,ket_a1.max,ket_a2.max,ket_b1.max,ket_b2.max)
-        fvec3 = permutedims(fvec2, [ 1, 3, 2, 4])
-        fvec4 = reshape(fvec3,ket_a1.max*ket_b1.max,ket_a2.max*ket_b2.max)
+        fvec2 = reshape(fvec, ket_a1.max, ket_a2.max, ket_b1.max, ket_b2.max)
+        fvec3 = permutedims(fvec2, [1, 3, 2, 4])
+        fvec4 = reshape(fvec3, ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
 
         # fvec4 is transpose of what we have in python code
         fvec5 = fvec4'
 
-        F = svd(fvec5,full=true)
+        F = svd(fvec5, full=true)
 
 
         nkeep = 0
-        @printf("   %5s %12s\n","State","Weight")
-        for (ni_idx,ni) in enumerate(F.S)
+        @printf("   %5s %12s\n", "State", "Weight")
+        for (ni_idx, ni) in enumerate(F.S)
             if ni > svd_thresh
                 nkeep += 1
-                @printf("   %5i %12.8f\n",ni_idx,ni)
+                @printf("   %5i %12.8f\n", ni_idx, ni)
             else
-                @printf("   %5i %12.8f (discarded)\n",ni_idx,ni)
+                @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
             end
         end
-        
+
 
         if nkeep > 0
-            schmidt_basis[fock] = Matrix(F.U[:,1:nkeep])
+            schmidt_basis[fock] = Matrix(F.U[:, 1:nkeep])
             #st = "fin_vec"*string(fock)
             #npzwrite(st, F.U[:,1:nkeep])
         end
-
         #norm += norm_curr
     end
 
@@ -1432,25 +1431,25 @@ end
 
 """
 """
-function compute_1rdm(ansatz::FCIAnsatz, vl::Vector{T}, vr::Vector{T}) where T
+function compute_1rdm(ansatz::FCIAnsatz, vl::Vector{T}, vr::Vector{T}) where {T}
     #={{{=#
 
 
-    rdma = compute_Aa(ansatz.no,                    
-                     ansatz.na, ansatz.nb,
-                     ansatz.na, ansatz.nb,
-                     reshape(vl, length(vl), 1), 
-                     reshape(vr, length(vr), 1), 
-                    "alpha") 
-   
-    rdmb = compute_Aa(ansatz.no,                    
-                     ansatz.na, ansatz.nb,
-                     ansatz.na, ansatz.nb,
-                     reshape(vl, length(vl), 1), 
-                     reshape(vr, length(vr), 1), 
-                    "beta") 
-   
-     
+    rdma = compute_Aa(ansatz.no,
+        ansatz.na, ansatz.nb,
+        ansatz.na, ansatz.nb,
+        reshape(vl, length(vl), 1),
+        reshape(vr, length(vr), 1),
+        "alpha")
+
+    rdmb = compute_Aa(ansatz.no,
+        ansatz.na, ansatz.nb,
+        ansatz.na, ansatz.nb,
+        reshape(vl, length(vl), 1),
+        reshape(vr, length(vr), 1),
+        "beta")
+
+
     rdma = reshape(rdma, ansatz.no, ansatz.no)
     rdmb = reshape(rdmb, ansatz.no, ansatz.no)
     return rdma, rdmb
@@ -1464,7 +1463,7 @@ end
 
 Compute the 1 and 2 rdm's, in pyscf order
 """
-function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) where T
+function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) where {T}
     #={{{=#
 
     no = P.no
@@ -1500,17 +1499,17 @@ function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) whe
             for q in 1:ket_a.no
                 bra = deepcopy(ket_a)
 
-                apply_annihilation!(bra,q)
+                apply_annihilation!(bra, q)
                 bra.sign != 0 || continue
-                apply_creation!(bra,p)
+                apply_creation!(bra, p)
                 bra.sign != 0 || continue
 
                 L = calc_linear_index(bra)
 
                 if bra.sign == 1
-                    @views rdm1a[p,q] += dot(vl[L,:], vr[Ka,:])
+                    @views rdm1a[p, q] += dot(vl[L, :], vr[Ka, :])
                 elseif bra.sign == -1
-                    @views rdm1a[p,q] -= dot(vl[L,:], vr[Ka,:])
+                    @views rdm1a[p, q] -= dot(vl[L, :], vr[Ka, :])
                 else
                     error(" Shouldn't be here")
                 end
@@ -1531,21 +1530,21 @@ function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) whe
                     for s in 1:ket_a.no
                         bra = deepcopy(ket_a)
 
-                        apply_annihilation!(bra,s)
+                        apply_annihilation!(bra, s)
                         bra.sign != 0 || continue
-                        apply_annihilation!(bra,r)
+                        apply_annihilation!(bra, r)
                         bra.sign != 0 || continue
-                        apply_creation!(bra,q)
+                        apply_creation!(bra, q)
                         bra.sign != 0 || continue
-                        apply_creation!(bra,p)
+                        apply_creation!(bra, p)
                         bra.sign != 0 || continue
 
                         L = calc_linear_index(bra)
 
                         if bra.sign == 1
-                            @views rdm2aa[p,s,q,r] += dot(vl[L,:], vr[Ka,:])
+                            @views rdm2aa[p, s, q, r] += dot(vl[L, :], vr[Ka, :])
                         elseif bra.sign == -1
-                            @views rdm2aa[p,s,q,r] -= dot(vl[L,:], vr[Ka,:])
+                            @views rdm2aa[p, s, q, r] -= dot(vl[L, :], vr[Ka, :])
                         else
                             error(" Shouldn't be here")
                         end
@@ -1566,17 +1565,17 @@ function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) whe
             for q in 1:ket_b.no
                 bra = deepcopy(ket_b)
 
-                apply_annihilation!(bra,q)
+                apply_annihilation!(bra, q)
                 bra.sign != 0 || continue
-                apply_creation!(bra,p)
+                apply_creation!(bra, p)
                 bra.sign != 0 || continue
 
                 L = calc_linear_index(bra)
 
                 if bra.sign == 1
-                    @views rdm1b[p,q] += dot(vl[:,L], vr[:,Kb])
+                    @views rdm1b[p, q] += dot(vl[:, L], vr[:, Kb])
                 elseif bra.sign == -1
-                    @views rdm1b[p,q] -= dot(vl[:,L], vr[:,Kb])
+                    @views rdm1b[p, q] -= dot(vl[:, L], vr[:, Kb])
                 else
                     error(" Shouldn't be here")
                 end
@@ -1597,21 +1596,21 @@ function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) whe
                     for s in 1:ket_b.no
                         bra = deepcopy(ket_b)
 
-                        apply_annihilation!(bra,s)
+                        apply_annihilation!(bra, s)
                         bra.sign != 0 || continue
-                        apply_annihilation!(bra,r)
+                        apply_annihilation!(bra, r)
                         bra.sign != 0 || continue
-                        apply_creation!(bra,q)
+                        apply_creation!(bra, q)
                         bra.sign != 0 || continue
-                        apply_creation!(bra,p)
+                        apply_creation!(bra, p)
                         bra.sign != 0 || continue
 
                         L = calc_linear_index(bra)
 
                         if bra.sign == 1
-                            @views rdm2bb[p,s,q,r] += dot(vl[:,L], vr[:,Kb])
+                            @views rdm2bb[p, s, q, r] += dot(vl[:, L], vr[:, Kb])
                         elseif bra.sign == -1
-                            @views rdm2bb[p,s,q,r] -= dot(vl[:,L], vr[:,Kb])
+                            @views rdm2bb[p, s, q, r] -= dot(vl[:, L], vr[:, Kb])
                         else
                             error(" Shouldn't be here")
                         end
@@ -1633,16 +1632,16 @@ function compute_rdm1_rdm2(P::FCIAnsatz, vec_l::Vector{T}, vec_r::Vector{T}) whe
             for p in 1:ket_a.no
                 for s in 1:ket_a.no
                     sign_a, La = ket_a_lookup[Ka][p+(s-1)*ket_a.no]
-                   
+
                     La != 0 || continue
 
-                    for q in 1:ket_b.no 
-                        for r in 1:ket_b.no 
+                    for q in 1:ket_b.no
+                        for r in 1:ket_b.no
                             sign_b, Lb = ket_b_lookup[Kb][q+(r-1)*ket_b.no]
                             Lb != 0 || continue
-                  
-                            sign = sign_a*sign_b
-                            rdm2ab[p,s,q,r] += vl[La,Lb] * vr[Ka,Kb] * sign
+
+                            sign = sign_a * sign_b
+                            rdm2ab[p, s, q, r] += vl[La, Lb] * vr[Ka, Kb] * sign
                         end
                     end
                 end
@@ -1701,6 +1700,132 @@ end
 #    return LinOp{T}(mymatvec, prb.dim, true, true)
 #end
 ##=}}}=#
+"""
+svd_state_project_S2(v, P::FCIAnsatz, norbs1, norbs2; svd_thresh=1e-6)
+Do an SVD of the FCI vector partitioned into clusters with (norbs1 | norbs2)
+where the orbitals are assumed to be ordered for cluster 1| cluster 2 having norbs1 and
+norbs2, respectively. SVD is done in a spin-adapted basis.
+- `P`: FCIAnsatz just defines the current CI ansatz (i.e., fock sector)
+- `norbs1`:number of orbitals in left cluster
+- `norbs2`:number of orbitals in right cluster
+- `svd_thresh`: the threshold below which the states will be discarded
 
- 
+"""
+function svd_state_project_S2(v, P::FCIAnsatz, norbs1, norbs2; svd_thresh=1e-6)
+    @assert(norbs1 + norbs2 == P.no)
+    schmidt_basis = OrderedDict()              # This will store the Schmidt blocks labelled by S², Nα, Nβ (Fock sector)
+    vector = OrderedDict{Tuple{Int,Int},Any}() # (n_α_left, n_β_left) => coefficients
 
+    println("----------------------------------------")
+    println("          SVD of state")
+    println("----------------------------------------")
+
+    ket_a = DeterminantString(P.no, P.na)
+    ket_b = DeterminantString(P.no, P.nb)
+
+    v = reshape(v, (ket_a.max, ket_b.max))
+    @assert(size(v, 1) == ket_a.max)
+    @assert(size(v, 2) == ket_b.max)
+
+    fock_labels_a = Array{Int,1}(undef, ket_a.max)
+    fock_labels_b = Array{Int,1}(undef, ket_b.max)
+
+    bisect = pyimport("bisect")
+    for I in 1:ket_a.max
+        fock_labels_a[I] = bisect.bisect(ket_a.config, norbs1)
+        incr!(ket_a)
+    end
+    for I in 1:ket_b.max
+        fock_labels_b[I] = bisect.bisect(ket_b.config, norbs1)
+        incr!(ket_b)
+    end
+
+    # Group coefficients by left Fock sector
+    for J in 1:ket_b.max
+        for I in 1:ket_a.max
+            fock = (fock_labels_a[I], fock_labels_b[J])
+
+            #if fock in vector
+            #    append!(vector[fock],v[I,J])
+            #else
+            #    vector[fock] = [v[I,J]]
+            #end
+            try
+                append!(vector[tuple(fock_labels_a[I], fock_labels_b[J])], v[I, J])
+            catch
+                vector[tuple(fock_labels_a[I], fock_labels_b[J])] = [v[I, J]]
+            end
+        end
+    end
+
+    # Loop over Fock sectors
+    for (fock, fvec) in vector
+        println()
+        @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
+
+        ket_a1 = DeterminantString(norbs1, fock[1])
+        ket_b1 = DeterminantString(norbs1, fock[2])
+        ket_a2 = DeterminantString(norbs2, P.na - fock[1])
+        ket_b2 = DeterminantString(norbs2, P.nb - fock[2])
+
+        temp_fvec = reshape(fvec, ket_b1.max * ket_b2.max, ket_a1.max * ket_a2.max)'
+        sign = 1
+        if (P.na - fock[1]) % 2 == 1 && fock[2] % 2 == 1
+            sign = -1
+        end
+        @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
+        norm_curr = fvec' * fvec
+        @printf("   Norm: %12.8f\n", sqrt(norm_curr))
+        fvec = sign * fvec
+
+        # Prepare block matrix for S2 projection
+        fvec2 = reshape(fvec, ket_a1.max, ket_a2.max, ket_b1.max, ket_b2.max)
+        fvec3 = permutedims(fvec2, [1, 3, 2, 4])
+        fvec4 = reshape(fvec3, ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
+        block_matrix = fvec4'
+        
+        ### S2-adapted block SVD ###
+        # Build S2 matrix for this sector
+        norbs_block = norbs1 + norbs2
+        nα_block = fock[1] + (P.na - fock[1])   # = P.na
+        nβ_block = fock[2] + (P.nb - fock[2])   # = P.nb
+        # local_ansatz = FCIAnsatz(...)
+        local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
+        S2_matrix = build_S2_matrix(local_ansatz)  # build S2 in basis of current block
+        eigen_obj = eigen(Symmetric(S2_matrix))
+        S2_eigvals = eigen_obj.values
+        S2_eigvecs = eigen_obj.vectors
+        unique_S2 = unique(round.(S2_eigvals, digits=8))
+
+        # Project block_matrix to S2 eigenbasis
+        block_matrix_S2basis = S2_eigvecs' * block_matrix  # Each row is a definite S2 eigenvector
+
+        for S2 in unique_S2
+            idxs = findall(x -> abs(x - S2) < 1e-8, S2_eigvals)
+            if isempty(idxs)
+                continue
+            end
+            block_fvec = block_matrix_S2basis[idxs, :] # Each row is an S2 eigenfunction
+
+            # SVD for each S2 block 
+            @printf("   S² block %f\n", S2)
+            @printf("   %5s %12s\n", "State", "Weight")
+            F = svd(block_fvec, full=true)
+            nkeep = 0
+            for (ni_idx, ni) in enumerate(F.S)
+                if ni > svd_thresh
+                    nkeep += 1
+                    @printf("   %5i %12.8f\n", ni_idx, ni)
+                else
+                    @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+                end
+            end
+            if nkeep > 0
+                schmidt_basis[(fock[1], fock[2], S2)] = Matrix(F.U[:, 1:nkeep])
+            end
+        end
+        ### END S2-adapted block SVD ###
+    end
+    return schmidt_basis
+end
+   
