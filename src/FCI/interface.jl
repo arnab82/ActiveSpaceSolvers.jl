@@ -1003,7 +1003,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             end
             if nkeep > 0
                 println("   Keeping ", nkeep, " states for S² = ", S2)
-                schmidt_basis[(fock[1], fock[2], S2)] = Matrix(F.U[:, 1:nkeep])
+                schmidt_basis[(fock[1], fock[2])] = Matrix(F.U[:, 1:nkeep])
             end
         end
         ### END S2-adapted block SVD ###
