@@ -949,13 +949,16 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix = fvec4'
 
         ### S2-adapted block SVD ###
-        # norbs_block = norbs1 + norbs2
-        # nα_block = fock[1] + (P.na - fock[1])   # = P.na
-        # nβ_block = fock[2] + (P.nb - fock[2])   # = P.nb
-        # local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
+        # The block matrix acts on basis (ket_a1, ket_b1) <-> (ket_a2, ket_b2)
+        # dim_block_left = ket_a1.max * ket_b1.max
+        # dim_block_right = ket_a2.max * ket_b2.max
+        # local_ansatz_left = FCIAnsatz(norbs1, fock[1], fock[2])
+        # S2_matrix_left = build_S2_matrix(local_ansatz_left)
+        # local_ansatz_right = FCIAnsatz(norbs2, n_elec_a(sol) - fock[1], n_elec_b(sol) - fock[2])
+        # S2_matrix_right = build_S2_matrix(local_ansatz_right)
         norbs_block = norbs1# + norbs2
-        nα_block = fock[1] 
-        nβ_block = fock[2] 
+        nα_block = fock[1]
+        nβ_block = fock[2]
         local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
 
         S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix
@@ -974,8 +977,8 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         println("shape of block matrix: ", size(block_matrix))
         println("shape of S2 eigvecs: ", size(S2_eigvecs))
         # Project block_matrix to S2 eigenbasis
-        block_matrix_S2basis = S2_eigvecs' * block_matrix
-
+        # block_matrix_S2basis = S2_eigvecs' * block_matrix
+        block_matrix_S2basis= block_matrix * S2_eigvecs
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-8, S2_eigvals)
             if isempty(idxs)
