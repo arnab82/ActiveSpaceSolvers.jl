@@ -38,7 +38,8 @@ function compute_s2 end
 function apply_sminus end
 function apply_splus end
 # analysis
-function svd_state end    
+function svd_state end  
+function svd_state_project_S2 end  
 # methods for getting info from Ansatze
 
 
@@ -81,9 +82,7 @@ export compute_s2
 # include sub-modules and import/export Ansatz sub-types
 include("FCI/FCI.jl");
 import .FCI: FCIAnsatz
-import .FCI:svd_state_project_S2
 export FCIAnsatz
-export svd_state_project_S2
 
 include("RASCI/RASCI.jl");
 import .RASCI: RASCIAnsatz
