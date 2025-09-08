@@ -951,16 +951,24 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         # nβ_block = fock[2] + (P.nb - fock[2])   # = P.nb
         # local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
         norbs_block = norbs1 + norbs2
-        nα_block = n_elec_a(sol)
-        nβ_block = n_elec_b(sol)
+        nα_block = fock[1] + (n_elec_a(sol) - fock[1])
+        nβ_block = fock[2] + (n_elec_b(sol) - fock[2])
         local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
 
         S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix
         eigen_obj = eigen(Symmetric(S2_matrix))
         S2_eigvals = eigen_obj.values
         S2_eigvecs = eigen_obj.vectors
+        printf("   S² eigenvalues computed\n")
+        for S2 in S2_eigvals
+            @printf(" %f ", S2)
+        end
         unique_S2 = unique(round.(S2_eigvals, digits=8))
-
+        @printf("   Unique S² eigenvalues: ")
+        for S2 in unique_S2
+            @printf(" %f ", S2)
+        end
+        println("shape of block matrix: ", size(block_matrix))
         # Project block_matrix to S2 eigenbasis
         block_matrix_S2basis = S2_eigvecs' * block_matrix
 
