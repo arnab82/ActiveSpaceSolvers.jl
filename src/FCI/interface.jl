@@ -858,8 +858,9 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
     println("          SVD of state")
     println("----------------------------------------")
 
-    ket_a = DeterminantString(P.no, P.na)
-    ket_b = DeterminantString(P.no, P.nb)
+    # Create ci_strings
+    ket_a = DeterminantString(n_orb(sol), n_elec_a(sol))
+    ket_b = DeterminantString(n_orb(sol), n_elec_b(sol))
 
     # v = reshape(v, (ket_a.max, ket_b.max))
     v = sol.vectors[:, root]
