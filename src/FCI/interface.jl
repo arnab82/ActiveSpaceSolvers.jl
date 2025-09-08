@@ -981,7 +981,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix_S2basis= block_matrix * S2_eigvecs
         rows, cols = size(block_matrix_S2basis)
         for S2 in unique_S2
-            idxs = findall(x -> abs(x - S2) < 1e-8, S2_eigvals)
+            idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
             if isempty(idxs_in_block_matrix)
                 continue
@@ -1002,6 +1002,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
                 end
             end
             if nkeep > 0
+                println("   Keeping ", nkeep, " states for S² = ", S2)
                 schmidt_basis[(fock[1], fock[2], S2)] = Matrix(F.U[:, 1:nkeep])
             end
         end
