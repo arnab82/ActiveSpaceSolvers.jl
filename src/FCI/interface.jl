@@ -849,7 +849,7 @@ where the states are projected into S^2 eigenstates before the SVD
 - `svd_thresh`: the threshold below which the states will be discarded
 """
 
-function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, norbs1, norbs2, svd_thresh=1e-6; root=1) where {T}
+function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, norbs1, norbs2, svd_thresh=1e-8; root=1) where {T}
 
     @assert(norbs1 + norbs2 == n_orb(sol))
     schmidt_basis = OrderedDict()              # Stores Schmidt blocks labelled by S^2, Nα, Nβ (Fock sector)
