@@ -974,7 +974,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         println("shape of block matrix: ", size(block_matrix))
         println("shape of S2 eigvecs: ", size(S2_eigvecs))
         # Project block_matrix to S2 eigenbasis
-        block_matrix_S2basis = S2_eigvecs' * block_matrix
+        block_matrix_S2basis = block_matrix * S2_eigvecs
 
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-8, S2_eigvals)
