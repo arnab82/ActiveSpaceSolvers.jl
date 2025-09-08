@@ -3,6 +3,7 @@ using QCBase
 import LinearMaps
 using OrderedCollections
 using BlockDavidson
+using Printf
 
 #import BlockDavidson: solve
 """
@@ -959,7 +960,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         eigen_obj = eigen(Symmetric(S2_matrix))
         S2_eigvals = eigen_obj.values
         S2_eigvecs = eigen_obj.vectors
-        printf("   S² eigenvalues computed\n")
+        @printf("   S² eigenvalues computed\n")
         for S2 in S2_eigvals
             @printf(" %f ", S2)
         end
@@ -969,6 +970,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             @printf(" %f ", S2)
         end
         println("shape of block matrix: ", size(block_matrix))
+        println("shape of S2 eigvecs: ", size(S2_eigvecs))
         # Project block_matrix to S2 eigenbasis
         block_matrix_S2basis = S2_eigvecs' * block_matrix
 
