@@ -920,12 +920,14 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         # ket_b1 = DeterminantString(norbs1, fock[2])
         # ket_a2 = DeterminantString(norbs2, P.na - fock[1])
         # ket_b2 = DeterminantString(norbs2, P.nb - fock[2])
+        println("norbs1: ", norbs1, " norbs2: ", norbs2)
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
 
         ket_a2 = DeterminantString(norbs2, n_elec_a(sol) - fock[1])
         ket_b2 = DeterminantString(norbs2, n_elec_b(sol) - fock[2])
-
+        println("ket_a1.max: ", ket_a1.max, " ket_b1.max: ", ket_b1.max)
+        println("ket_a2.max: ", ket_a2.max, " ket_b2.max: ", ket_b2.max)
         temp_fvec = reshape(fvec, ket_b1.max * ket_b2.max, ket_a1.max * ket_a2.max)'
         # sign = 1
         # if (P.na - fock[1]) % 2 == 1 && fock[2] % 2 == 1
