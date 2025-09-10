@@ -993,12 +993,12 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             # if isempty(idxs_in_block_matrix)
             #     continue
             # end
-            block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
+            # block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
 
             # SVD for each S2 block
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
-            F = svd(block_fvec, full=true)
+            F = svd(block_matrix_S2basis, full=true)
             nkeep = 0
             for (ni_idx, ni) in enumerate(F.S)
                 if ni > svd_thresh
