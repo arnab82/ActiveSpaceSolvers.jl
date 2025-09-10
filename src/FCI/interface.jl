@@ -986,6 +986,8 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             temp_basis[(fock[1], fock[2])] = Matrix{Float64}[]
         end
         for S2 in unique_S2
+            println()
+            println(" Projecting to S² = ", S2)
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
             if isempty(idxs_in_block_matrix)
