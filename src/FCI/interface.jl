@@ -981,7 +981,10 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix_S2basis = block_matrix * S2_eigvecs
         rows, cols = size(block_matrix_S2basis)
         fock_sector_nkeep = 0
-        temp_basis = Dict()
+        temp_basis = Dict{Tuple{Int, Int}, Vector{Matrix{Float64}}}()
+        if !haskey(temp_basis, (fock[1], fock[2]))
+            temp_basis[(fock[1], fock[2])] = Matrix{Float64}[]
+        end
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
@@ -1005,17 +1008,16 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             end
             if nkeep > 0
                 println("   Keeping ", nkeep, " states for S² = ", S2)
-                temp_basis[(fock[1], fock[2])] = Matrix(F.U[:, 1:nkeep])
+                push!(temp_basis[(fock[1], fock[2])], Matrix(F.U[:, 1:nkeep]))
             end
             fock_sector_nkeep += nkeep
             println("   Total kept states in Fock sector (", fock[1], "α, ", fock[2], "β): ", fock_sector_nkeep)
             # if fock does not exist in schmidt basis, 
             # the schmidt basis is equal to temp_basis, if exists then concatenate
             if !haskey(schmidt_basis, fock)
-                schmidt_basis[fock] = temp_basis[fock]
+                schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
             else
-                # If fock sector exists, concatenate vertically (rowwise)
-                schmidt_basis[fock] = vcat(schmidt_basis[fock], temp_basis[fock])
+                schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
             end
         end
 
