@@ -980,6 +980,8 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         # block_matrix_S2basis = S2_eigvecs' * block_matrix
         block_matrix_S2basis= block_matrix * S2_eigvecs
         rows, cols = size(block_matrix_S2basis)
+        fock_sector_nkeep = 0
+        temp_basis = Dict()
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
@@ -1003,8 +1005,17 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             end
             if nkeep > 0
                 println("   Keeping ", nkeep, " states for S² = ", S2)
-                schmidt_basis[(fock[1], fock[2])] = Matrix(F.U[:, 1:nkeep])
+                temp_basis[(fock[1], fock[2])] = Matrix(F.U[:, 1:nkeep])
             end
+            fock_sector_nkeep += nkeep
+        end
+        # if fock does not exist in schmidt basis, 
+        # the schmidt basis is equal to temp_basis, if exists then concatenate
+        if !haskey(schmidt_basis, fock)
+            schmidt_basis[fock] = temp_basis[(fock[1], fock[2])]
+        else
+            # If fock sector exists, concatenate vertically (rowwise)
+            schmidt_basis[fock] = vcat(schmidt_basis[fock], temp_basis[(fock[1], fock[2])])
         end
         ### END S2-adapted block SVD ###
     end
