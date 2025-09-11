@@ -1005,7 +1005,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             # end
         end
         if fock_sector_nkeep > 0
-            schmidt_basis[fock] = vcat(temp_basis...)  # concatenate all S² blocks rowwise
+            schmidt_basis[fock] = hcat(temp_basis...)  # concatenate all S² blocks rowwise
             println("Final size of schmidt basis in Fock sector (", fock[1], "α, ", fock[2], "β): ", size(schmidt_basis[fock]))
         else
             println("No states kept in Fock sector (", fock[1], "α, ", fock[2], "β)")
