@@ -997,7 +997,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             if !haskey(schmidt_basis, fock)
                 schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
             else
-                schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
+                schmidt_basis[fock] = vcat(schmidt_basis[fock], temp_basis[fock])
             end
         end
 
