@@ -999,8 +999,9 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         if size(schmidt_cols, 2) > 0
             # schmidt_basis[fock] = schmidt_cols[1:fock_sector_nkeep, :]# is this the correct way to keep the right vectors
             schmidt_basis[fock] = schmidt_cols
+            println("Final reconstructed Schmidt basis size: ", size(schmidt_cols))
         end
-        println("Final reconstructed Schmidt basis size: ", size(schmidt_basis[fock]))
+        
         ### END S2-adapted block SVD ###
     end
     println()
