@@ -963,54 +963,80 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         println("shape of S2 eigvecs: ", size(S2_eigvecs))
         # Project block_matrix to S2 eigenbasis
         # block_matrix_S2basis = S2_eigvecs' * block_matrix
-        block_matrix_S2basis = block_matrix * S2_eigvecs
+        # block_matrix_S2basis = block_matrix * S2_eigvecs
+        # rows, cols = size(block_matrix_S2basis)
+        # fock_sector_nkeep = 0
+        # temp_basis = Dict{Tuple{Int, Int}, Vector{Matrix{Float64}}}()
+        # temp_basis=[]
+        # for S2 in unique_S2
+        #     println()
+        #     println(" Projecting to S² = ", S2)
+        #     idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
+        #     idxs_in_block_matrix = filter(i -> i <= rows, idxs)
+        #     if isempty(idxs_in_block_matrix)
+        #         continue
+        #     end
+        #     block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
+        #     # SVD for each S2 block
+        #     @printf("   S² block %f\n", S2)
+        #     @printf("   %5s %12s\n", "State", "Weight")
+        #     F = svd(block_fvec, full=true)
+        #     nkeep = 0
+
+        #     for (ni_idx, ni) in enumerate(F.S)
+        #         if ni > svd_thresh
+        #             nkeep += 1
+        #             @printf("   %5i %12.8f\n", ni_idx, ni)
+        #         else
+        #             @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+        #         end
+        #     end
+        #     if nkeep > 0
+        #         println("   Keeping ", nkeep, " states for S² = ", S2)
+        #         push!(temp_basis, Matrix(F.U[:, 1:nkeep]))
+        #     end
+        #     fock_sector_nkeep += nkeep
+        #     println("   Total kept states in Fock sector (", fock[1], "α, ", fock[2], "β): ", fock_sector_nkeep)
+
+        #     # if !haskey(schmidt_basis, fock)
+        #     #     schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
+        #     # else
+        #     #     schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
+        #     # end
+        # end
+        # if fock_sector_nkeep > 0
+        #     # schmidt_basis[fock] = hcat(temp_basis...)  
+        #     schmidt_basis[fock] = reshape(temp_basis, :, fock_sector_nkeep)
+        #     println("Final size of schmidt basis in Fock sector (", fock[1], "α, ", fock[2], "β): ", size(schmidt_basis[fock]))
+        # else
+        #     println("No states kept in Fock sector (", fock[1], "α, ", fock[2], "β)")
+        # end
+        block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
+
         rows, cols = size(block_matrix_S2basis)
-        fock_sector_nkeep = 0
-        temp_basis = Dict{Tuple{Int, Int}, Vector{Matrix{Float64}}}()
-        temp_basis=[]
+        schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
+
         for S2 in unique_S2
-            println()
-            println(" Projecting to S² = ", S2)
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            if isempty(idxs_in_block_matrix)
-                continue
-            end
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
-            # SVD for each S2 block
-            @printf("   S² block %f\n", S2)
-            @printf("   %5s %12s\n", "State", "Weight")
-            F = svd(block_fvec, full=true)
-            nkeep = 0
+            F_block = svd(block_fvec, full=true)
+            kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
+            kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
 
-            for (ni_idx, ni) in enumerate(F.S)
-                if ni > svd_thresh
-                    nkeep += 1
-                    @printf("   %5i %12.8f\n", ni_idx, ni)
-                else
-                    @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
-                end
+            # Reconstruct global basis columns for each kept vector:
+            for j = 1:size(kept_block_vectors, 2)
+                col = zeros(rows)
+                col[idxs_in_block_matrix] .= kept_block_vectors[:, j]
+                schmidt_cols = hcat(schmidt_cols, col)
             end
-            if nkeep > 0
-                println("   Keeping ", nkeep, " states for S² = ", S2)
-                push!(temp_basis, Matrix(F.U[:, 1:nkeep]))
-            end
-            fock_sector_nkeep += nkeep
-            println("   Total kept states in Fock sector (", fock[1], "α, ", fock[2], "β): ", fock_sector_nkeep)
-            
-            # if !haskey(schmidt_basis, fock)
-            #     schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
-            # else
-            #     schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
-            # end
-        end
-        if fock_sector_nkeep > 0
-            schmidt_basis[fock] = hcat(temp_basis...)  # concatenate all S² blocks rowwise
-            println("Final size of schmidt basis in Fock sector (", fock[1], "α, ", fock[2], "β): ", size(schmidt_basis[fock]))
-        else
-            println("No states kept in Fock sector (", fock[1], "α, ", fock[2], "β)")
         end
 
+        println("Final reconstructed Schmidt basis size: ", size(schmidt_cols))
+
+        if size(schmidt_cols, 2) > 0
+            schmidt_basis[fock] = schmidt_cols
+        end
         ### END S2-adapted block SVD ###
     end
     println()
