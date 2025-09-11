@@ -1005,7 +1005,9 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
     end
     println()
     println("Final Schmidt basis:")
-    println("size of schmidt_basis: ", size(schmidt_basis))
+    for key in keys(schmidt_basis)
+        println("Fock sector ", key, ": size ", size(schmidt_basis[key]))
+    end
     # display(schmidt_basis)
     return schmidt_basis
 end
