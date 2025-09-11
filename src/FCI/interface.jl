@@ -1025,6 +1025,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             F_block = svd(block_fvec, full=true)
             kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
             kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
+            nkeep = 0
             for (ni_idx, ni) in enumerate(F_block.S)
                 if ni > svd_thresh
                     nkeep += 1
