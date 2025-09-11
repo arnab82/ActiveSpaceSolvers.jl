@@ -915,11 +915,6 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
     for (fock, fvec) in vector
         println()
         @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
-
-        # ket_a1 = DeterminantString(norbs1, fock[1])
-        # ket_b1 = DeterminantString(norbs1, fock[2])
-        # ket_a2 = DeterminantString(norbs2, P.na - fock[1])
-        # ket_b2 = DeterminantString(norbs2, P.nb - fock[2])
         println("norbs1: ", norbs1, " norbs2: ", norbs2)
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
@@ -929,10 +924,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         println("ket_a1.max: ", ket_a1.max, " ket_b1.max: ", ket_b1.max)
         println("ket_a2.max: ", ket_a2.max, " ket_b2.max: ", ket_b2.max)
         temp_fvec = reshape(fvec, ket_b1.max * ket_b2.max, ket_a1.max * ket_a2.max)'
-        # sign = 1
-        # if (P.na - fock[1]) % 2 == 1 && fock[2] % 2 == 1
-        #     sign = -1
-        # end
+
         sign = 1
         if (n_elec_a(sol) - fock[1]) % 2 == 1 && fock[2] % 2 == 1
             sign = -1
@@ -949,13 +941,6 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix = fvec4'
 
         ### S2-adapted block SVD ###
-        # The block matrix acts on basis (ket_a1, ket_b1) <-> (ket_a2, ket_b2)
-        # dim_block_left = ket_a1.max * ket_b1.max
-        # dim_block_right = ket_a2.max * ket_b2.max
-        # local_ansatz_left = FCIAnsatz(norbs1, fock[1], fock[2])
-        # S2_matrix_left = build_S2_matrix(local_ansatz_left)
-        # local_ansatz_right = FCIAnsatz(norbs2, n_elec_a(sol) - fock[1], n_elec_b(sol) - fock[2])
-        # S2_matrix_right = build_S2_matrix(local_ansatz_right)
         norbs_block = norbs1# + norbs2
         nα_block = fock[1]
         nβ_block = fock[2]
@@ -988,12 +973,6 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         for S2 in unique_S2
             println()
             println(" Projecting to S² = ", S2)
-            # idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
-            # idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            # if isempty(idxs_in_block_matrix)
-            #     continue
-            # end
-            # block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
 
             # SVD for each S2 block
             @printf("   S² block %f\n", S2)
@@ -1014,8 +993,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             end
             fock_sector_nkeep += nkeep
             println("   Total kept states in Fock sector (", fock[1], "α, ", fock[2], "β): ", fock_sector_nkeep)
-            # if fock does not exist in schmidt basis, 
-            # the schmidt basis is equal to temp_basis, if exists then concatenate
+            
             if !haskey(schmidt_basis, fock)
                 schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
             else
@@ -1025,6 +1003,9 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
 
         ### END S2-adapted block SVD ###
     end
+    println()
+    println("Final Schmidt basis:")
+    println("size of schmidt_basis: ", size(schmidt_basis))
     # display(schmidt_basis)
     return schmidt_basis
 end
