@@ -849,7 +849,7 @@ where the states are projected into S^2 eigenstates before the SVD
 - `svd_thresh`: the threshold below which the states will be discarded
 """
 
-function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, norbs1, norbs2, svd_thresh=1e-8; root=1) where {T}
+function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, norbs1, norbs2, svd_thresh=1e-8; root=1,verbose=4) where {T}
 
     @assert(norbs1 + norbs2 == n_orb(sol))
     schmidt_basis = OrderedDict()              # Stores Schmidt blocks labelled by S^2, Nα, Nβ (Fock sector)
@@ -959,14 +959,16 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         for S2 in unique_S2
             @printf(" %f ", S2)
         end
-        println("shape of block matrix: ", size(block_matrix))
-        println("shape of S2 eigvecs: ", size(S2_eigvecs))
-        
+        if verbose>2
+            println("shape of block matrix: ", size(block_matrix))
+            println("shape of S2 eigvecs: ", size(S2_eigvecs))
+        end    
         block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
 
         rows, cols = size(block_matrix_S2basis)
         schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
         fock_sector_nkeep = 0
+        @printf("   Project and SVD in each S² block\n")
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
@@ -994,12 +996,11 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             fock_sector_nkeep += length(kept_indices)
         end
 
-        println("Final reconstructed Schmidt basis size: ", size(schmidt_cols))
-
         if size(schmidt_cols, 2) > 0
-            schmidt_basis[fock] = schmidt_cols[1:fock_sector_nkeep, :]# is this the correct way to keep the right vectors
-            # schmidt_basis[fock] = schmidt_cols
+            # schmidt_basis[fock] = schmidt_cols[1:fock_sector_nkeep, :]# is this the correct way to keep the right vectors
+            schmidt_basis[fock] = schmidt_cols
         end
+        println("Final reconstructed Schmidt basis size: ", size(schmidt_basis[fock]))
         ### END S2-adapted block SVD ###
     end
     println()
