@@ -967,9 +967,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         rows, cols = size(block_matrix_S2basis)
         fock_sector_nkeep = 0
         temp_basis = Dict{Tuple{Int, Int}, Vector{Matrix{Float64}}}()
-        if !haskey(temp_basis, (fock[1], fock[2]))
-            temp_basis[(fock[1], fock[2])] = Matrix{Float64}[]
-        end
+        temp_basis=[]
         for S2 in unique_S2
             println()
             println(" Projecting to S² = ", S2)
@@ -995,16 +993,22 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             end
             if nkeep > 0
                 println("   Keeping ", nkeep, " states for S² = ", S2)
-                push!(temp_basis[(fock[1], fock[2])], Matrix(F.U[:, 1:nkeep]))
+                push!(temp_basis, Matrix(F.U[:, 1:nkeep]))
             end
             fock_sector_nkeep += nkeep
             println("   Total kept states in Fock sector (", fock[1], "α, ", fock[2], "β): ", fock_sector_nkeep)
             
-            if !haskey(schmidt_basis, fock)
-                schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
-            else
-                schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
-            end
+            # if !haskey(schmidt_basis, fock)
+            #     schmidt_basis[fock] = vcat(temp_basis[fock]...)  # concatenate all S² blocks rowwise
+            # else
+            #     schmidt_basis[fock] = vcat(schmidt_basis[fock], vcat(temp_basis[fock]...))
+            # end
+        end
+        if fock_sector_nkeep > 0
+            schmidt_basis[fock] = vcat(temp_basis...)  # concatenate all S² blocks rowwise
+            println("Final size of schmidt basis in Fock sector (", fock[1], "α, ", fock[2], "β): ", size(schmidt_basis[fock]))
+        else
+            println("No states kept in Fock sector (", fock[1], "α, ", fock[2], "β)")
         end
 
         ### END S2-adapted block SVD ###
