@@ -1015,21 +1015,31 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
 
         rows, cols = size(block_matrix_S2basis)
         schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
-
+        fock_sector_nkeep = 0
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
+            @printf("   S² block %f\n", S2)
+            @printf("   %5s %12s\n", "State", "Weight")
             F_block = svd(block_fvec, full=true)
             kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
             kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
-
+            for (ni_idx, ni) in enumerate(F_block.S)
+                if ni > svd_thresh
+                    nkeep += 1
+                    @printf("   %5i %12.8f\n", ni_idx, ni)
+                else
+                    @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+                end
+            end
             # Reconstruct global basis columns for each kept vector:
             for j = 1:size(kept_block_vectors, 2)
                 col = zeros(rows)
                 col[idxs_in_block_matrix] .= kept_block_vectors[:, j]
                 schmidt_cols = hcat(schmidt_cols, col)
             end
+            fock_sector_nkeep += length(kept_indices)
         end
 
         println("Final reconstructed Schmidt basis size: ", size(schmidt_cols))
