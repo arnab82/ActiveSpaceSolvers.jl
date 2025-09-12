@@ -955,8 +955,9 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             @printf(" %f ", S2)
         end
         rounded_S2 = round.(S2_eigvals, digits=8)
-        fixed_S2 = map(x -> x == 0.0 ? 0.0 : x, rounded_S2)
+        fixed_S2 = map(x -> abs(x), rounded_S2)
         unique_S2 = unique(fixed_S2)
+
         @printf("   Unique S² eigenvalues: ")
         for S2 in unique_S2
             @printf(" %f ", S2)
