@@ -970,7 +970,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         fock_sector_nkeep = 0
         @printf("   Project and SVD in each S² block\n")
         for S2 in unique_S2
-            idxs = findall(x -> abs(x - S2) < 1e-6, S2_eigvals)
+            idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
             display(idxs_in_block_matrix)
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
