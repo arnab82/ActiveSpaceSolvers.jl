@@ -970,12 +970,12 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         fock_sector_nkeep = 0
         @printf("   Project and SVD in each S² block\n")
         for S2 in unique_S2
-            idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
-            idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
+            # idxs = findall(x -> abs(x - S2) < 1e-17, S2_eigvals)
+            # idxs_in_block_matrix = filter(i -> i <= rows, idxs)
+            # block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
-            F_block = svd(block_fvec, full=true)
+            F_block = svd(block_fvec_S2basis, full=true)
             kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
             kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
             nkeep = 0
