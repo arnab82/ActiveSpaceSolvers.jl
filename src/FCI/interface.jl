@@ -988,6 +988,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             println("shape of block matrix: ", size(block_matrix))
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
             println("shape of S2 bath eigvecs: ", size(S2_eigvecs_bath))
+            println()
         end    
         block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
         block_matrix_S2basis_bath = S2_eigvecs_bath'*block_matrix  # (dim, dim)
@@ -1000,7 +1001,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         for S2 in unique_S2
             idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            display(idxs_in_block_matrix)
+            # display(idxs_in_block_matrix)
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
