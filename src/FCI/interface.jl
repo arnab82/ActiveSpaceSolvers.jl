@@ -943,9 +943,12 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix = fvec4'
 
         ### S2-adapted block SVD ###
-        norbs_block = norbs1# + norbs2
-        nα_block = fock[1]
-        nβ_block = fock[2]
+        # norbs_block = norbs1 
+        # nα_block = fock[1]
+        # nβ_block = fock[2]
+        norbs_block = norbs1 +norbs2
+        nα_block = fock[1] + (n_elec_a(sol) - fock[1])
+        nβ_block = fock[2] + (n_elec_b(sol) - fock[2])
         local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
 
         S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix
