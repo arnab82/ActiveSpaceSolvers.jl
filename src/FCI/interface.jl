@@ -946,11 +946,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         norbs_block = norbs1 
         nα_block = fock[1]
         nβ_block = fock[2]
-        # norbs_block = norbs1 +norbs2
-        # nα_block = fock[1] + (n_elec_a(sol) - fock[1])
-        # nβ_block = fock[2] + (n_elec_b(sol) - fock[2])
-        local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
-
+        local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)      
         S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix
         eigen_obj = eigen(S2_matrix)
         S2_eigvals = eigen_obj.values
@@ -967,12 +963,35 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         for S2 in unique_S2
             @printf(" %f ", S2)
         end
+
+        norbs_block_bath = norbs2
+        nα_block_bath =  (n_elec_a(sol) - fock[1])
+        nβ_block_bath = (n_elec_b(sol) - fock[2])
+        local_ansatz_bath = FCIAnsatz(norbs_block_bath, nα_block_bath, nβ_block_bath)
+        S2_matrix_bath = build_S2_matrix(local_ansatz_bath)  # Construct S^2 matrix
+        eigen_obj_bath = eigen(S2_matrix_bath)
+        S2_eigvals_bath = eigen_obj_bath.values
+        S2_eigvecs_bath = eigen_obj_bath.vectors
+        @printf("   S² eigenvalues bath computed\n")
+        for S2 in S2_eigvals_bath
+            @printf(" %f ", S2)
+        end
+        rounded_S2_bath = round.(S2_eigvals_bath, digits=8)
+        fixed_S2_bath = map(x -> abs(x), rounded_S2_bath)
+        unique_S2_bath = unique(fixed_S2_bath)
+        @printf("   Unique S² eigenvalues bath: ")
+        for S2 in unique_S2_bath
+            @printf(" %f ", S2)
+        end
         if verbose>2
             println("shape of block matrix: ", size(block_matrix))
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
+            println("shape of S2 bath eigvecs: ", size(S2_eigvecs_bath))
         end    
         block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
-
+        block_matrix_S2basis_bath = S2_eigvecs_bath'*block_matrix  # (dim, dim)
+        println("shape of block matrix in S2 basis: ", size(block_matrix_S2basis))
+        println("shape of block matrix in S2 basis bath: ", size(block_matrix_S2basis_bath))
         rows, cols = size(block_matrix_S2basis)
         schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
         fock_sector_nkeep = 0
