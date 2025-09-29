@@ -914,11 +914,13 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
     # Loop over Fock sectors
     for (fock, fvec) in vector
         println()
+        @printf("system+bath electrons:  %iα, %iβ\n", n_elec_a(sol), n_elec_b(sol))
         @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
         println("norbs1: ", norbs1, " norbs2: ", norbs2)
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
 
+        
         ket_a2 = DeterminantString(norbs2, n_elec_a(sol) - fock[1])
         ket_b2 = DeterminantString(norbs2, n_elec_b(sol) - fock[2])
         println("ket_a1.max: ", ket_a1.max, " ket_b1.max: ", ket_b1.max)
