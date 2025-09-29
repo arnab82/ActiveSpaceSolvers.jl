@@ -984,6 +984,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             @printf(" %f ", S2)
         end
         if verbose>2
+            println()
             println("shape of block matrix: ", size(block_matrix))
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
             println("shape of S2 bath eigvecs: ", size(S2_eigvecs_bath))
