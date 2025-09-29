@@ -931,9 +931,11 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         if (n_elec_a(sol) - fock[1]) % 2 == 1 && fock[2] % 2 == 1
             sign = -1
         end
-        @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
         norm_curr = fvec' * fvec
-        @printf("   Norm: %12.8f\n", sqrt(norm_curr))
+        if verbose > 2
+            @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
+            @printf("   Norm: %12.8f\n", sqrt(norm_curr))
+        end
         fvec = sign * fvec
 
         # Prepare block matrix for S2 projection
@@ -951,59 +953,37 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         eigen_obj = eigen(S2_matrix)
         S2_eigvals = eigen_obj.values
         S2_eigvecs = eigen_obj.vectors
-        @printf("   S² eigenvalues computed\n")
-        for S2 in S2_eigvals
-            @printf(" %f ", S2)
+        if verbose >2 
+            @printf("   S² eigenvalues computed\n")
+            for S2 in S2_eigvals
+                @printf(" %f ", S2)
+            end
         end
         rounded_S2 = round.(S2_eigvals, digits=8)
         fixed_S2 = map(x -> abs(x), rounded_S2)
         unique_S2 = unique(fixed_S2)
         println()
-        @printf("   Unique S² eigenvalues: ")
-        for S2 in unique_S2
-            @printf(" %f ", S2)
-        end
-        println()
-        norbs_block_bath = norbs2
-        nα_block_bath =  (n_elec_a(sol) - fock[1])
-        nβ_block_bath = (n_elec_b(sol) - fock[2])
-        local_ansatz_bath = FCIAnsatz(norbs_block_bath, nα_block_bath, nβ_block_bath)
-        S2_matrix_bath = build_S2_matrix(local_ansatz_bath)  # Construct S^2 matrix
-        eigen_obj_bath = eigen(S2_matrix_bath)
-        S2_eigvals_bath = eigen_obj_bath.values
-        S2_eigvecs_bath = eigen_obj_bath.vectors
-        println()
-        @printf("   S² eigenvalues bath computed\n")
-        for S2 in S2_eigvals_bath
-            @printf(" %f ", S2)
-        end
-        rounded_S2_bath = round.(S2_eigvals_bath, digits=8)
-        fixed_S2_bath = map(x -> abs(x), rounded_S2_bath)
-        unique_S2_bath = unique(fixed_S2_bath)
-        println()
-        @printf("   Unique S² eigenvalues bath: ")
-        for S2 in unique_S2_bath
-            @printf(" %f ", S2)
-        end
         if verbose>2
+            @printf("   Unique S² eigenvalues: ")
+            for S2 in unique_S2
+                @printf(" %f ", S2)
+            end
             println()
             println("shape of block matrix: ", size(block_matrix))
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
-            println("shape of S2 bath eigvecs: ", size(S2_eigvecs_bath))
             println()
         end    
-        block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
-        block_matrix_S2basis_bath = S2_eigvecs_bath'*block_matrix  # (dim, dim)
-        println("shape of block matrix in S2 basis: ", size(block_matrix_S2basis))
-        println("shape of block matrix in S2 basis bath: ", size(block_matrix_S2basis_bath))
-        rows, cols = size(block_matrix_S2basis_bath)
-        schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
+
+        schmidt_cols = Matrix{Float64}(undef, rows, 0)    
         fock_sector_nkeep = 0
-        @printf("   Project and SVD in each S² block\n")
+        if verbose>2
+            @printf("   Project and SVD in each S² block\n")
+        end
+        
         for S2 in unique_S2
+            
             idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            # display(idxs_in_block_matrix)
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
@@ -1042,10 +1022,8 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         ### END S2-adapted block SVD ###
     end
     println()
-    println("Final Schmidt basis:")
     for key in keys(schmidt_basis)
         println("Fock sector ", key, ": size ", size(schmidt_basis[key]))
     end
-    # display(schmidt_basis)
     return schmidt_basis
 end
