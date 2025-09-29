@@ -963,7 +963,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         for S2 in unique_S2
             @printf(" %f ", S2)
         end
-
+        println()
         norbs_block_bath = norbs2
         nα_block_bath =  (n_elec_a(sol) - fock[1])
         nβ_block_bath = (n_elec_b(sol) - fock[2])
