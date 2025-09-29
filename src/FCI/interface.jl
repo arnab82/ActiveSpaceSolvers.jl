@@ -976,10 +976,12 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             println()
         end    
         
-        rows, cols = size(block_matrix)
-        schmidt_cols = Matrix{Float64}(undef, rows, 0)    
+        block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
+        rows, cols = size(block_matrix_S2basis)
+        schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
         fock_sector_nkeep = 0
-        if verbose>2
+        if verbose >2 
+            println("shape of block matrix in S2 basis: ", size(block_matrix_S2basis))
             @printf("   Project and SVD in each S² block\n")
         end
         
