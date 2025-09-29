@@ -996,15 +996,15 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         block_matrix_S2basis_bath = S2_eigvecs_bath'*block_matrix  # (dim, dim)
         println("shape of block matrix in S2 basis: ", size(block_matrix_S2basis))
         println("shape of block matrix in S2 basis bath: ", size(block_matrix_S2basis_bath))
-        rows, cols = size(block_matrix_S2basis)
+        rows, cols = size(block_matrix_S2basis_bath)
         schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
         fock_sector_nkeep = 0
         @printf("   Project and SVD in each S² block\n")
         for S2 in unique_S2
-            idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
+            idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals_bath)
             idxs_in_block_matrix = filter(i -> i <= rows, idxs)
             # display(idxs_in_block_matrix)
-            block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
+            block_fvec = block_matrix_S2basis_bath[idxs_in_block_matrix, :]
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
             F_block = svd(block_fvec, full=true)
