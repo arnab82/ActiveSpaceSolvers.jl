@@ -975,7 +975,8 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
             println()
         end    
-
+        
+        rows, cols = size(block_matrix)
         schmidt_cols = Matrix{Float64}(undef, rows, 0)    
         fock_sector_nkeep = 0
         if verbose>2
