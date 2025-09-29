@@ -958,7 +958,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         rounded_S2 = round.(S2_eigvals, digits=8)
         fixed_S2 = map(x -> abs(x), rounded_S2)
         unique_S2 = unique(fixed_S2)
-
+        println()
         @printf("   Unique S² eigenvalues: ")
         for S2 in unique_S2
             @printf(" %f ", S2)
@@ -972,6 +972,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         eigen_obj_bath = eigen(S2_matrix_bath)
         S2_eigvals_bath = eigen_obj_bath.values
         S2_eigvecs_bath = eigen_obj_bath.vectors
+        println()
         @printf("   S² eigenvalues bath computed\n")
         for S2 in S2_eigvals_bath
             @printf(" %f ", S2)
@@ -979,6 +980,7 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         rounded_S2_bath = round.(S2_eigvals_bath, digits=8)
         fixed_S2_bath = map(x -> abs(x), rounded_S2_bath)
         unique_S2_bath = unique(fixed_S2_bath)
+        println()
         @printf("   Unique S² eigenvalues bath: ")
         for S2 in unique_S2_bath
             @printf(" %f ", S2)
