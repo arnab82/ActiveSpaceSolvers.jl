@@ -992,16 +992,16 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
             block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
             @printf("   S² block %f\n", S2)
             @printf("   %5s %12s\n", "State", "Weight")
-            rho = block_fvec * block_fvec'
-            eigvals_, eigvecs_ = eigen(rho)
-            kept_indices = findall(x -> x > svd_thresh^2, eigvals_)
-            kept_block_vectors = eigvecs_[:, kept_indices]
+            # rho = block_fvec * block_fvec'
+            # eigvals_, eigvecs_ = eigen(rho)
+            # kept_indices = findall(x -> x > svd_thresh^2, eigvals_)
+            # kept_block_vectors = eigvecs_[:, kept_indices]
 
-            # F_block = svd(block_fvec, full=true)
-            # kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
-            # kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
+            F_block = svd(block_fvec, full=true)
+            kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
+            kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
             nkeep = 0
-            for (ni_idx, ni) in enumerate(eigvals_)#(F_block.S)
+            for (ni_idx, ni) in enumerate(F_block.S)#(eigvals_)
                 if ni > svd_thresh
                     nkeep += 1
                     @printf("   %5i %12.8f\n", ni_idx, ni)
