@@ -915,19 +915,21 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
 
     # Loop over Fock sectors
     for (fock, fvec) in vector
-        println()
-        @printf("system+bath electrons:  %iα, %iβ\n", n_elec_a(sol), n_elec_b(sol))
-        @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
-        println("norbs1: ", norbs1, " norbs2: ", norbs2)
+        if verbose > 2
+            println()
+            @printf("system+bath electrons:  %iα, %iβ\n", n_elec_a(sol), n_elec_b(sol))
+            @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
+            println("norbs1: ", norbs1, " norbs2: ", norbs2)
+        end
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
 
-        
         ket_a2 = DeterminantString(norbs2, n_elec_a(sol) - fock[1])
         ket_b2 = DeterminantString(norbs2, n_elec_b(sol) - fock[2])
-        println("ket_a1.max: ", ket_a1.max, " ket_b1.max: ", ket_b1.max)
-        println("ket_a2.max: ", ket_a2.max, " ket_b2.max: ", ket_b2.max)
-        temp_fvec = reshape(fvec, ket_b1.max * ket_b2.max, ket_a1.max * ket_a2.max)'
+        if verbose > 2
+            println("ket_a1.max: ", ket_a1.max, " ket_b1.max: ", ket_b1.max)
+            println("ket_a2.max: ", ket_a2.max, " ket_b2.max: ", ket_b2.max)
+        end
 
         sign = 1
         if (n_elec_a(sol) - fock[1]) % 2 == 1 && fock[2] % 2 == 1
@@ -943,19 +945,20 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         # Prepare block matrix for S2 projection
         fvec2 = reshape(fvec, ket_a1.max, ket_a2.max, ket_b1.max, ket_b2.max)
         fvec3 = permutedims(fvec2, [1, 3, 2, 4])
+        # fvec4: shape (dim_left, dim_right) — fragment × bath
+        # dim_left = ket_a1.max * ket_b1.max  (fragment FCI dimension for this fock sector)
         fvec4 = reshape(fvec3, ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
-        block_matrix = fvec4'
 
         ### S2-adapted block SVD ###
-        norbs_block = norbs1 
+        norbs_block = norbs1
         nα_block = fock[1]
         nβ_block = fock[2]
-        local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)      
-        S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix
+        local_ansatz = FCIAnsatz(norbs_block, nα_block, nβ_block)
+        S2_matrix = build_S2_matrix(local_ansatz)  # Construct S^2 matrix for LEFT (fragment) cluster
         eigen_obj = eigen(S2_matrix)
         S2_eigvals = eigen_obj.values
-        S2_eigvecs = eigen_obj.vectors
-        if verbose >2 
+        S2_eigvecs = eigen_obj.vectors   # columns are S2 eigenstates; shape (dim_left, dim_left)
+        if verbose > 2
             @printf("   S² eigenvalues computed\n")
             for S2 in S2_eigvals
                 @printf(" %f ", S2)
@@ -964,71 +967,68 @@ function ActiveSpaceSolvers.svd_state_project_S2(sol::Solution{FCIAnsatz,T}, nor
         rounded_S2 = round.(S2_eigvals, digits=8)
         fixed_S2 = map(x -> abs(x), rounded_S2)
         unique_S2 = unique(fixed_S2)
-        println()
-        if verbose>2
+        if verbose > 2
             @printf("   Unique S² eigenvalues: ")
             for S2 in unique_S2
                 @printf(" %f ", S2)
             end
             println()
-            println("shape of block matrix: ", size(block_matrix))
+            println("shape of fvec4 (left×right): ", size(fvec4))
             println("shape of S2 eigvecs: ", size(S2_eigvecs))
             println()
-        end    
-        
-        block_matrix_S2basis = block_matrix * S2_eigvecs   # (dim, dim)
-        rows, cols = size(block_matrix_S2basis)
-        schmidt_cols = Matrix{Float64}(undef, rows, 0)    # Start with zero columns
+        end
+
+        # Rotate LEFT indices to S2 eigenbasis: fvec4_S2 = S2_eigvecs' * fvec4
+        # S2_eigvecs' has shape (dim_left, dim_left), fvec4 has shape (dim_left, dim_right)
+        # Result: (dim_left, dim_right) — rows are S2 eigenstates of fragment
+        fvec4_S2basis = S2_eigvecs' * fvec4
+        dim_left = size(fvec4, 1)
+        schmidt_cols = Matrix{Float64}(undef, dim_left, 0)
         fock_sector_nkeep = 0
-        if verbose >2 
-            println("shape of block matrix in S2 basis: ", size(block_matrix_S2basis))
+        if verbose > 2
+            println("shape of fvec4 in S2 basis: ", size(fvec4_S2basis))
             @printf("   Project and SVD in each S² block\n")
         end
-        
-        for S2 in unique_S2
-            
-            idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
-            idxs_in_block_matrix = filter(i -> i <= rows, idxs)
-            block_fvec = block_matrix_S2basis[idxs_in_block_matrix, :]
-            @printf("   S² block %f\n", S2)
-            @printf("   %5s %12s\n", "State", "Weight")
-            # rho = block_fvec * block_fvec'
-            # eigvals_, eigvecs_ = eigen(rho)
-            # kept_indices = findall(x -> x > svd_thresh^2, eigvals_)
-            # kept_block_vectors = eigvecs_[:, kept_indices]
 
-            F_block = svd(block_fvec, full=true)
+        for S2 in unique_S2
+            idxs = findall(x -> abs(x - S2) < 1e-3, S2_eigvals)
+            block_fvec = fvec4_S2basis[idxs, :]   # (len(idxs), dim_right)
+            if verbose > 2
+                @printf("   S² block %f\n", S2)
+                @printf("   %5s %12s\n", "State", "Weight")
+            end
+
+            F_block = svd(block_fvec)
             kept_indices = findall(ni -> ni > svd_thresh, F_block.S)
-            kept_block_vectors = F_block.U[:, kept_indices]  # shape: (nblock, nkeep_block)
-            nkeep = 0
-            for (ni_idx, ni) in enumerate(F_block.S)#(eigvals_)
-                if ni > svd_thresh
-                    nkeep += 1
-                    @printf("   %5i %12.8f\n", ni_idx, ni)
-                else
-                    @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+            kept_block_vectors = F_block.U[:, kept_indices]  # (len(idxs), nkeep_block)
+            if verbose > 2
+                for (ni_idx, ni) in enumerate(F_block.S)
+                    if ni > svd_thresh
+                        @printf("   %5i %12.8f\n", ni_idx, ni)
+                    else
+                        @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+                    end
                 end
             end
-            # Reconstruct global basis columns for each kept vector:
-            for j = 1:size(kept_block_vectors, 2)
-                col = zeros(rows)
-                col[idxs_in_block_matrix] .= kept_block_vectors[:, j]
+            # Transform kept vectors back to original LEFT basis:
+            # S2_eigvecs[:, idxs] * vec_in_S2_block → (dim_left,)
+            for j in 1:size(kept_block_vectors, 2)
+                col = S2_eigvecs[:, idxs] * kept_block_vectors[:, j]
                 schmidt_cols = hcat(schmidt_cols, col)
             end
             fock_sector_nkeep += length(kept_indices)
         end
 
         if size(schmidt_cols, 2) > 0
-            # schmidt_basis[fock] = schmidt_cols[1:fock_sector_nkeep, :]# is this the correct way to keep the right vectors
             schmidt_basis[fock] = schmidt_cols
-            println("Final reconstructed Schmidt basis size: ", size(schmidt_cols))
+            verbose > 2 && println("   Fock ", fock, ": kept ", size(schmidt_cols, 2), " of ", dim_left, " basis vectors")
         end
-        
-        ### END S2-adapted block SVD ###
     end
-    println()
-    for key in keys(schmidt_basis)
-        println("Fock sector ", key, ": size ", size(schmidt_basis[key]))
+    if verbose > 1
+        println()
+        for key in keys(schmidt_basis)
+            println("Fock sector ", key, ": size ", size(schmidt_basis[key]))
+        end
     end
     return schmidt_basis
 end
