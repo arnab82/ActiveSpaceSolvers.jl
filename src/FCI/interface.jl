@@ -806,10 +806,8 @@ function ActiveSpaceSolvers.svd_state(sol::Solution{FCIAnsatz,T}, norbs1, norbs2
         fvec3 = permutedims(fvec2, [1, 3, 2, 4])
         fvec4 = reshape(fvec3, ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
 
-        # fvec4 is transpose of what we have in python code
-        fvec5 = fvec4'
-
-        F = svd(fvec5, full=true)
+        # SVD of fvec4 (dim_left × dim_right): U has shape (dim_left, dim_left)
+        F = svd(fvec4, full=true)
 
 
         nkeep = 0
