@@ -771,8 +771,10 @@ function ActiveSpaceSolvers.svd_state(sol::Solution{FCIAnsatz,T}, norbs1, norbs2
 
     for (fock, fvec) in vector
 
-        println()
-        @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
+        if verbose > 0
+            println()
+            @printf("Prepare Fock Space:  %iα, %iβ\n", fock[1], fock[2])
+        end
 
         ket_a1 = DeterminantString(norbs1, fock[1])
         ket_b1 = DeterminantString(norbs1, fock[2])
@@ -792,13 +794,11 @@ function ActiveSpaceSolvers.svd_state(sol::Solution{FCIAnsatz,T}, norbs1, norbs2
         if (n_elec_a(sol) - fock[1]) % 2 == 1 && fock[2] % 2 == 1
             sign = -1
         end
-        #println("sign",sign)
-        @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
-
-        norm_curr = fvec' * fvec
-        @printf("   Norm: %12.8f\n", sqrt(norm_curr))
-        #println(size(fvec))
-        #display(fvec)
+        if verbose > 0
+            @printf("   Dimensions: %5i x %-5i \n", ket_a1.max * ket_b1.max, ket_a2.max * ket_b2.max)
+            norm_curr = fvec' * fvec
+            @printf("   Norm: %12.8f\n", sqrt(norm_curr))
+        end
 
         fvec = sign * fvec
 
@@ -813,13 +813,15 @@ function ActiveSpaceSolvers.svd_state(sol::Solution{FCIAnsatz,T}, norbs1, norbs2
 
 
         nkeep = 0
-        @printf("   %5s %12s\n", "State", "Weight")
+        if verbose > 0
+            @printf("   %5s %12s\n", "State", "Weight")
+        end
         for (ni_idx, ni) in enumerate(F.S)
             if ni > svd_thresh
                 nkeep += 1
-                @printf("   %5i %12.8f\n", ni_idx, ni)
+                verbose > 0 && @printf("   %5i %12.8f\n", ni_idx, ni)
             else
-                @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
+                verbose > 0 && @printf("   %5i %12.8f (discarded)\n", ni_idx, ni)
             end
         end
 
