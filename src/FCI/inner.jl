@@ -1314,10 +1314,6 @@ function svd_state(v, P::FCIAnsatz, norbs1, norbs2, svd_thresh)
 
     #schmidt_basis = Dict{Tuple,Matrix{Float64}}
 
-    println("----------------------------------------")
-    println("          SVD of state")
-    println("----------------------------------------")
-
     # Create ci_strings
     ket_a = DeterminantString(P.no, P.na)
     ket_b = DeterminantString(P.no, P.nb)
